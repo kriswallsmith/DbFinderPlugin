@@ -22,5 +22,14 @@ $browser = new sfTestBrowser();
 $browser->initialize();
 
 // initialize database manager
-$databaseManager = new sfDatabaseManager();
-$databaseManager->initialize();
+if(method_exists('sfDatabaseManager', 'loadConfiguration'))
+{
+  // symfony 1.1 style
+  new sfDatabaseManager($configuration);
+}
+else
+{
+  // symfony 1.0 style
+  $databaseManager = new sfDatabaseManager();
+  $databaseManager->initialize();
+}
