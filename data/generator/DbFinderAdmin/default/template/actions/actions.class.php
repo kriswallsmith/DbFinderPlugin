@@ -66,7 +66,7 @@ class <?php echo $this->getGeneratedModuleName() ?>Actions extends sfActions
 
       $this->save<?php echo $this->getClassName() ?>($this-><?php echo $this->getSingularName() ?>);
 
-      $this->setFlash('notice', 'Your modifications have been saved');
+      $this->setFlashCompatible('notice', 'Your modifications have been saved');
 
       if ($this->getRequestParameter('save_and_add'))
       {
@@ -491,5 +491,18 @@ $column = sfPropelManyToMany::getColumn($class, $through_class);
 <?php endforeach; ?>
 <?php endforeach; ?>
     );
+  }
+  
+  // For 1.1 compatibility (why doesn't sfCompat10Plugin take care of that ?)
+  protected function setFlashCompatible($name, $value)
+  {
+    if(method_exists($this, 'setFlash'))
+    {
+      parent::setFlash($name, $value);
+    }
+    else
+    {
+      $this->getUser()->setFlash($name, $value);
+    }
   }
 }
