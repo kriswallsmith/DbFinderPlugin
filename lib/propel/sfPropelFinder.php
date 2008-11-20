@@ -722,7 +722,7 @@ class sfPropelFinder extends sfModelFinder
           }
           if($isEmpty)
           {
-            break;
+            continue;
           }
           
           // initialize our object directory

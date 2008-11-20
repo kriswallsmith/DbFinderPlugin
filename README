@@ -629,7 +629,9 @@ TODO / Ideas
 Changelog
 ---------
 
-### 2008-11-17 | Trunk
+### 2008-11-20 | Trunk
+
+* francois: Fixed issue with two left joins, two `with()`, and missing objects in `sfPropelFinder`
 
 ### 2008-11-17 | 1.0.0 Stable
 

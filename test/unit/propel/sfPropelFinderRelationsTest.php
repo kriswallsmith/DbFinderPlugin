@@ -53,7 +53,7 @@ Beware that the tables for these models will be emptied by the tests, so use a t
 
 include dirname(__FILE__).'/../../bootstrap.php';
 
-$t = new lime_test(88, new lime_output_color());
+$t = new lime_test(96, new lime_output_color());
 
 $t->diag('findRelation()');
 
@@ -545,3 +545,38 @@ catch(Exception $e)
 {
   $t->fail('withColumn() doesn\'t transform decimal numbers');
 }
+
+$t->diag('sfPropelFinder::with() does not fail with two left joins and missing related objects');
+
+CommentPeer::doDeleteAll();
+ArticlePeer::doDeleteAll();
+Articlei18nPeer::doDeleteAll();
+AuthorPeer::doDeleteAll();
+
+$article1 = new Article();
+$article1->setTitle('aaa');
+$article1->save();
+$comment1 = new Comment();
+$comment1->setArticleId($article1->getId());
+$comment1->save();
+$author1 = new Author();
+$author1->setName('auth1');
+$author1->save();
+$comment2 = new Comment();
+$comment2->setArticleId($article1->getId());
+$comment2->setAuthor($author1);
+$comment2->save();
+
+$finder = sfPropelFinder::from('Comment')->
+  leftJoin('Author')->with('Author')->
+  leftJoin('Article')->with('Article');
+$comments = $finder->find();
+$latestQuery = $finder->getLatestQuery();
+$t->is($comments[0]->getAuthor(), null, 'First object has no author');
+$t->is(Propel::getConnection()->getLastExecutedQuery(), $latestQuery, 'Related hydration occurred correctly');
+$t->isnt($comments[0]->getArticle(), null, 'First object has an article');
+$t->is(Propel::getConnection()->getLastExecutedQuery(), $latestQuery, 'Related hydration occurred correctly');
+$t->isnt($comments[1]->getAuthor(), null, 'Second object has an author');
+$t->is(Propel::getConnection()->getLastExecutedQuery(), $latestQuery, 'Related hydration occurred correctly');
+$t->isnt($comments[1]->getArticle(), null, 'Second object has an article');
+$t->is(Propel::getConnection()->getLastExecutedQuery(), $latestQuery, 'Related hydration occurred correctly');
