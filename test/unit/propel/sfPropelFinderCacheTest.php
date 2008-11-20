@@ -69,6 +69,41 @@ $id1 = DbFinder::from('Article')->where('Title', 'foo')->where('Id', '=', 1, 'te
 $id2 = DbFinder::from('Article')->where('Title', 'foo')->getUniqueIdentifier();
 $t->is($id1, $id2, 'unique identifier does not take uncombined conditions into account');
 
+if(!class_exists('sfProcessCache'))
+{
+  // so this is symfony 1.1
+  class sfProcessCache
+  {
+    protected $cache;
+    public function __construct()
+    {
+      $this->cache = new sfAPCCache();
+      $this->cache->initialize();
+    }
+    
+    public function set($key, $value, $lifeTime = 0)
+    {
+      return $this->cache->set($key, $value, $lifeTime = 0);
+    }
+
+    public function get($key)
+    {
+      return $this->cache->get($key);
+    }
+
+    public function has($key)
+    {
+      return $this->cache->has($key);
+    }
+
+    public function clear()
+    {
+      return $this->cache->clean();
+    }
+  }
+}
+
+
 $cache = new sfProcessCache();
 
 $t->diag('useCache()');
