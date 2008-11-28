@@ -397,13 +397,6 @@ $comment->setArticleId($article1->getId());
 $comment->setAuthor($author1);
 $comment->save();
 
-$finder = sfPropelFinder::from('Comment')->
-  join('Article')->
-  withColumn('Article.Title');
-$comment = $finder->findOne();
-$t->is($comment->getColumn('Article.Title'), 'bbbbb', 'Additional columns added with withColumn() are stored in the object and can be retrieved with getColumn()');
-$t->is($finder->getLatestQuery(), 'SELECT comment.ID, comment.CONTENT, comment.ARTICLE_ID, comment.AUTHOR_ID, article.TITLE AS "Article.Title" FROM comment INNER JOIN article ON (comment.ARTICLE_ID=article.ID) LIMIT 1', 'Columns added with withColumn() can contain a dot (and are then escaped with double quotes in SQL)');
-
 $comment = sfPropelFinder::from('Comment')->
   join('Article')->
   findOne();
@@ -417,6 +410,13 @@ catch(Exception $e)
   $t->pass('getColumn() is not available as long as you don\'t add a column with withColumn()');
 }
 
+$finder = sfPropelFinder::from('Comment')->
+  join('Article')->
+  withColumn('Article.Title');
+$comment = $finder->findOne();
+$t->is($comment->getColumn('Article.Title'), 'bbbbb', 'Additional columns added with withColumn() are stored in the object and can be retrieved with getColumn()');
+$t->is($finder->getLatestQuery(), 'SELECT comment.ID, comment.CONTENT, comment.ARTICLE_ID, comment.AUTHOR_ID, article.TITLE AS "Article.Title" FROM comment INNER JOIN article ON (comment.ARTICLE_ID=article.ID) LIMIT 1', 'Columns added with withColumn() can contain a dot (and are then escaped with double quotes in SQL)');
+
 $comment = sfPropelFinder::from('Comment')->
   withColumn('Article.Title')->
   findOne();
@@ -428,11 +428,19 @@ $comment = sfPropelFinder::from('Comment')->
   findOne();
 $t->is($comment->getColumn('ArticleTitle'), 'bbbbb', 'withColumn() second parameter serves as a column alias');
 
-$comment = sfPropelFinder::from('Comment')->
-  join('Article')->
-  withColumn('Article.Title', 'ArticleTitle', 'int')->
-  findOne();
-$t->is($comment->getColumn('ArticleTitle'), '0', 'withColumn() third parameter serves as a type caster');
+if (method_exists('ColumnMap', 'getCreoleType'))
+{
+  // Propel1.2
+  $comment = sfPropelFinder::from('Comment')->
+    join('Article')->
+    withColumn('Article.Title', 'ArticleTitle', 'int')->
+    findOne();
+  $t->is($comment->getColumn('ArticleTitle'), '0', 'withColumn() third parameter serves as a type caster (only with Propel 1.2)');
+}
+else
+{
+  $t->skip('withColumn() third parameter serves as a type caster (only with Propel 1.2)');
+}
 
 $comment = sfPropelFinder::from('Comment')->
   join('Article')->join('Author')->
