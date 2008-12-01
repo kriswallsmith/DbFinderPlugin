@@ -5,12 +5,12 @@
   <summary>The `DbFinder` is a symfony plugin that provides an easy API for finding Model objects, whether the underlying ORM is Propel or Doctrine.</summary>
   <description>`DbFinder` can be seen as:
 
-  * a usability layer to ease the use of Propel's Criteria object and Peer classes
-  * an extension to Propel's limited capabilities to provide:
+  * A usability layer to ease the use of Propel's Criteria object and Peer classes
+  * An extension to Propel's limited capabilities to provide:
     - complex joins
     - custom hydration of related objects and columns
     - schema and relation introspection
-  * a compatibility layer to allow plugins to work with both Propel and Doctrine
+  * A compatibility layer to allow plugins to work with Propel 1.2, Propel 1.3, and Doctrine
   </description>
   <lead>
     <name>Francois Zaninotto</name>
@@ -18,10 +18,10 @@
     <email>francois.zaninotto@symfony-project.com</email>
     <active>yes</active>
   </lead>
-  <date>2008-11-17</date>
+  <date>2008-12-01</date>
   <version>
-    <release>1.0.0</release>
-    <api>1.0.0</api>
+    <release>1.1.0</release>
+    <api>1.1.0</api>
   </version>
   <stability>
     <release>stable</release>
@@ -82,6 +82,7 @@
       <dir name="lib">
         <file name="DbFinder.php" role="data"/>
         <file name="DbFinderAdminGenerator.class.php" role="data"/>
+        <file name="DbFinderColumn.class.php" role="data"/>
         <file name="sfModelFinder.php" role="data"/>
         <dir name="doctrine">
           <file name="sfDoctrineFinder.php" role="data"/>
@@ -110,14 +111,32 @@
         <name>symfony</name>
         <channel>pear.symfony-project.com</channel>
         <min>1.0.0</min>
-        <max>1.2.0</max>
-        <exclude>1.2.0</exclude>
+        <max>1.3.0</max>
+        <exclude>1.3.0</exclude>
       </package>
     </required>
   </dependencies>
   <phprelease>
  </phprelease>
  <changelog>
+   <release>
+     <version>
+       <release>1.1.0</release>
+       <api>1.1.0</api>
+     </version>
+     <stability>
+      <release>stable</release>
+      <api>stable</api>
+     </stability>
+     <license uri="http://www.symfony-project.com/license">MIT license</license>
+     <date>2008-12-01</date>
+     <license>MIT</license>
+     <notes>
+       * francois: Made the admin generator theme compatible with Propel 1.3. Now DbFinder allows full compatibility between Propel 1.2, Propel 1.3, and Doctrine.
+       * francois: Fixed issue with `setFlash()` in admin generator theme (sf 1.1 compatibility)
+       * francois: Fixed issue with two left joins, two `with()`, and missing objects in `sfPropelFinder`
+     </notes>
+   </release>
    <release>
      <version>
        <release>1.0.0</release>

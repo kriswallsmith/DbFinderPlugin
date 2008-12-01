@@ -3,14 +3,12 @@ DbFinder plugin
 
 The `DbFinder` is a symfony plugin that provides an easy API for finding Model objects, whether the underlying ORM is Propel or Doctrine. It can be seen as:
 
-* a usability layer to ease the use of Propel's Criteria object and Peer classes
-* an extension to Propel's limited capabilities to provide:
+* A usability layer to ease the use of Propel's Criteria object and Peer classes
+* An extension to Propel's limited capabilities to provide:
   - complex joins
   - custom hydration of related objects and columns
   - schema and relation introspection
-* a compatibility layer to allow plugins to work with both Propel and Doctrine
-
-Warning: The Doctrine implementation is not yet complete. The syntax described below works completely with Propel 1.2 and 1.3, and partially with doctrine 0.11.
+* A compatibility layer to allow plugins to work with Propel 1.2, Propel 1.3, and Doctrine
 
 Overview
 --------
@@ -33,7 +31,7 @@ The idea behind this plugin is to write queries to retrieve model objects throug
       with('Category')->
       find();
 
-`DbFinder` uses the same fluid interface as the `sfFinder`, so you won't be lost. It is compatible with symfony 1.0 and 1.1, with Propel 1.2 and 1.3, and with Doctrine 0.11. `DbFinder` comes with a Propel and a Doctrine adapter (`sfPropelFinder`, `sfDoctrineFinder`). Whenever you use `DbFinder::from()`, the finder will check whether you look for Propel or Doctrine objects and use the appropriate adapter.
+`DbFinder` uses the same fluid interface as the `sfFinder`, so you won't be lost. It is compatible with symfony 1.0 to 1.2, with Propel 1.2 and 1.3, and with Doctrine 1.0. `DbFinder` comes with a Propel and a Doctrine adapter (`sfPropelFinder`, `sfDoctrineFinder`). Whenever you use `DbFinder::from()`, the finder will check whether you look for Propel or Doctrine objects and use the appropriate adapter.
 
 You can also implement your own business logic to encapsulate complex queries, so that your queries look like real language:
 
@@ -52,6 +50,8 @@ Installation
 * Clear the cache
 
         > php symfony cc
+
+**Warning**: The Doctrine implementation requires Doctrine 1.0. Unfortunately, only the version of `sfDoctrinePlugin` bundled for symfony 1.1 is compatible with Dbfinder, since the one for sf 1.0 uses the Doctrine 0.11 branch, and the one for sf 1.2 doesn't bundle the admin generator theme anymore.
 
 Usage
 -----
@@ -629,7 +629,7 @@ TODO / Ideas
 Changelog
 ---------
 
-### 2008-11-28 | Trunk
+### 2008-12-01 | 1.1.0 Stable
 
 * francois: Made the admin generator theme compatible with Propel 1.3. Now DbFinder allows full compatibility between Propel 1.2, Propel 1.3, and Doctrine.
 * francois: Fixed issue with `setFlash()` in admin generator theme (sf 1.1 compatibility)
