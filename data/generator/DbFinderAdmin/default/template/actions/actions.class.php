@@ -273,7 +273,7 @@ $column = sfPropelManyToMany::getColumn($class, $through_class);
 
     if (!$this->getRequest()->hasErrors() && $this->getRequest()->getFileSize('<?php echo $this->getSingularName() ?>[<?php echo $name ?>]'))
     {
-<?php elseif ($type != DbFinderAdminGenerator::BOOLEAN): ?>
+<?php elseif ($type != DbFinderColumn::BOOLEAN): ?>
     if (isset($<?php echo $this->getSingularName() ?>['<?php echo $name ?>']))
     {
 <?php endif; ?>
@@ -290,14 +290,14 @@ $column = sfPropelManyToMany::getColumn($class, $through_class);
       }
       $this->getRequest()->moveFile('<?php echo $this->getSingularName() ?>[<?php echo $name ?>]', sfConfig::get('sf_upload_dir')."/<?php echo $upload_dir ?>/".$fileName.$ext);
       <?php echo $this->DbFinderAdminGenerator->getColumnSetter($column, '$fileName.$ext') ?>;
-<?php elseif ($type == DbFinderAdminGenerator::DATE || $type == DbFinderAdminGenerator::TIMESTAMP): ?>
+<?php elseif ($type == DbFinderColumn::DATE || $type == DbFinderColumn::TIMESTAMP): ?>
       if ($<?php echo $this->getSingularName() ?>['<?php echo $name ?>'])
       {
         try
         {
           $dateFormat = new sfDateFormat($this->getUser()->getCulture());
-          <?php $inputPattern  = $type == DbFinderAdminGenerator::DATE ? 'd' : 'g'; ?>
-          <?php $outputPattern = $type == DbFinderAdminGenerator::DATE ? 'i' : 'I'; ?>
+          <?php $inputPattern  = $type == DbFinderColumn::DATE ? 'd' : 'g'; ?>
+          <?php $outputPattern = $type == DbFinderColumn::DATE ? 'i' : 'I'; ?>
           if (!is_array($<?php echo $this->getSingularName() ?>['<?php echo $name ?>']))
           {
             $value = $dateFormat->format($<?php echo $this->getSingularName() ?>['<?php echo $name ?>'], '<?php echo $outputPattern ?>', $dateFormat->getInputPattern('<?php echo $inputPattern ?>'));
@@ -318,7 +318,7 @@ $column = sfPropelManyToMany::getColumn($class, $through_class);
       {
         <?php echo $this->DbFinderAdminGenerator->getColumnSetter($column, 'null') ?>;
       }
-<?php elseif ($type == DbFinderAdminGenerator::BOOLEAN): ?>
+<?php elseif ($type == DbFinderColumn::BOOLEAN): ?>
     <?php $boolVar = "\${$this->getSingularName()}['$name']";
       echo $this->DbFinderAdminGenerator->getColumnSetter($column, "isset($boolVar) ? $boolVar : 0") ?>;
 <?php elseif ($column->isForeignKey()): ?>
@@ -327,7 +327,7 @@ $column = sfPropelManyToMany::getColumn($class, $through_class);
 <?php else: ?>
     <?php echo $this->DbFinderAdminGenerator->getColumnSetter($column, "\${$this->getSingularName()}['$name']") ?>;
 <?php endif; ?>
-<?php if ($type != DbFinderAdminGenerator::BOOLEAN): ?>
+<?php if ($type != DbFinderColumn::BOOLEAN): ?>
     }
 <?php endif; ?>
 <?php if ($credentials): ?>
@@ -374,7 +374,7 @@ $column = sfPropelManyToMany::getColumn($class, $through_class);
     {
       $filters = $this->getRequestParameter('filters');
 <?php foreach ($this->getColumns('list.filters') as $column): $type = $this->DbFinderAdminGenerator->getColumnType($column); ?>
-<?php if ($type == DbFinderAdminGenerator::DATE || $type == DbFinderAdminGenerator::TIMESTAMP): ?>
+<?php if ($type == DbFinderColumn::DATE || $type == DbFinderColumn::TIMESTAMP): ?>
       if (isset($filters['<?php echo $column->getName() ?>']['from']) && $filters['<?php echo $column->getName() ?>']['from'] !== '')
       {
         $filters['<?php echo $column->getName() ?>']['from'] = sfI18N::getTimestampForCulture($filters['<?php echo $column->getName() ?>']['from'], $this->getUser()->getCulture());
@@ -425,12 +425,12 @@ $column = sfPropelManyToMany::getColumn($class, $through_class);
       $finder->where('<?php echo $name ?>', '=', '');
       $finder->_or('<?php echo $name ?>', 'is null', null);
     }
-<?php if ($type == DbFinderAdminGenerator::DATE || $type == DbFinderAdminGenerator::TIMESTAMP): ?>
+<?php if ($type == DbFinderColumn::DATE || $type == DbFinderColumn::TIMESTAMP): ?>
     else if (isset($this->filters['<?php echo $column->getName() ?>']))
     {
       if (isset($this->filters['<?php echo $column->getName() ?>']['from']) && $this->filters['<?php echo $column->getName() ?>']['from'] !== '')
       {
-<?php if ($type == DbFinderAdminGenerator::DATE): ?>
+<?php if ($type == DbFinderColumn::DATE): ?>
         $finder->where('<?php echo $name ?>', '>=', date('Y-m-d', $this->filters['<?php echo $column->getName() ?>']['from']));
 <?php else: ?>
         $finder->where('<?php echo $name ?>', '>=', $this->filters['<?php echo $column->getName() ?>']['from']);
@@ -438,7 +438,7 @@ $column = sfPropelManyToMany::getColumn($class, $through_class);
       }
       if (isset($this->filters['<?php echo $column->getName() ?>']['to']) && $this->filters['<?php echo $column->getName() ?>']['to'] !== '')
       {
-<?php if ($type == DbFinderAdminGenerator::DATE): ?>
+<?php if ($type == DbFinderColumn::DATE): ?>
         $finder->where('<?php echo $name ?>', '<=', date('Y-m-d', $this->filters['<?php echo $column->getName() ?>']['to']));
 <?php else: ?>
         $finder->where('<?php echo $name ?>', '<=', $this->filters['<?php echo $column->getName() ?>']['to']);
@@ -449,7 +449,7 @@ $column = sfPropelManyToMany::getColumn($class, $through_class);
 <?php else: ?>
     else if (isset($this->filters['<?php echo $column->getName() ?>']) && $this->filters['<?php echo $column->getName() ?>'] !== '')
     {
-<?php if ($type == DbFinderAdminGenerator::STRING): ?>
+<?php if ($type == DbFinderColumn::STRING): ?>
       $finder->where('<?php echo $name ?>', 'like', '%'.trim($this->filters['<?php echo $column->getName() ?>'], '*%').'%');
 <?php else: ?>
       $finder->where('<?php echo $name ?>', $this->filters['<?php echo $column->getName() ?>']);

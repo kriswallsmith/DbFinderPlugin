@@ -7,8 +7,7 @@ class DbFinderAdminGenerator extends sfGenerator
     DOCTRINE   = 'Doctrine';
   protected
     $generator = null,
-    $orm       = null,
-    $version   = null;
+    $orm       = null;
   
   /**
    * Generates classes and templates in cache.
@@ -51,137 +50,13 @@ class DbFinderAdminGenerator extends sfGenerator
     $this->generator->initialize($this->generatorManager);
     $this->generator->setGeneratorClass('DbFinderAdmin');
     $this->generator->DbFinderAdminGenerator = $this;
+    
     return $this->generator->generate($params);
   }
   
-
-  const STRING = "STRING";
-  const NUMERIC = "NUMERIC";
-  const DECIMAL = "DECIMAL";
-  const TINYINT = "TINYINT";
-  const SMALLINT = "SMALLINT";
-  const INTEGER = "INTEGER";
-  const BIGINT = "BIGINT";
-  const REAL = "REAL";
-  const FLOAT = "FLOAT";
-  const DOUBLE = "DOUBLE";
-  const BINARY = "BINARY";
-  const VARBINARY = "VARBINARY";
-  const LONGVARBINARY = "LONGVARBINARY";
-  const BLOB = "BLOB";
-  const DATE = "DATE";
-  const TIME = "TIME";
-  const TIMESTAMP = "TIMESTAMP";
-  const BU_DATE = "BU_DATE";
-  const BU_TIMESTAMP = "BU_TIMESTAMP";
-  const BOOLEAN = "BOOLEAN";
-  
-  private static $propel12ToDbFinderMap = array(
-    1 => self::BOOLEAN,
-    2 => self::BIGINT,
-    3 => self::SMALLINT,
-    4 => self::TINYINT,
-    5 => self::INTEGER,
-    6 => self::STRING,
-    7 => self::STRING,
-    8 => self::FLOAT,
-    9 => self::DOUBLE,
-    10 => self::DATE,
-    11 => self::TIME,
-    12 => self::TIMESTAMP,
-    13 => self::VARBINARY,
-    14 => self::NUMERIC,
-    15 => self::BLOB,
-    16 => self::STRING,
-    17 => self::STRING,
-    18 => self::DECIMAL,
-    19 => self::REAL,
-    20 => self::BINARY,
-    21 => self::LONGVARBINARY,
-    22 => self::INTEGER,
-  );
-  private static $propel13ToDbFinderMap = array(
-    'CHAR'          => self::STRING,
-    'VARCHAR'       => self::STRING,
-    'LONGVARCHAR'   => self::STRING,
-    'CLOB'          => self::STRING,
-    'NUMERIC'       => self::NUMERIC,
-    'DECIMAL'       => self::DECIMAL,
-    'TINYINT'       => self::TINYINT,
-    'SMALLINT'      => self::SMALLINT,
-    'INTEGER'       => self::INTEGER,
-    'BIGINT'        => self::BIGINT,
-    'REAL'          => self::REAL,
-    'FLOAT'         => self::FLOAT,
-    'DOUBLE'        => self::DOUBLE,
-    'BINARY'        => self::BINARY,
-    'VARBINARY'     => self::VARBINARY,
-    'LONGVARBINARY' => self::LONGVARBINARY,
-    'BLOB'          => self::BLOB,
-    'DATE'          => self::DATE,
-    'TIME'          => self::TIME,
-    'TIMESTAMP'     => self::TIMESTAMP,
-    'BU_DATE'       => self::BU_DATE,
-    'BU_TIMESTAMP'  => self::BU_TIMESTAMP,
-    'BOOLEAN'       => self::BOOLEAN,
-  );
-  private static $doctrineToDbFinderMap = array(
-    'enum'      => self::INTEGER,
-    'text'      => self::STRING,
-    'object'    => self::STRING,
-    'array'     => self::STRING,
-    'string'    => self::STRING,
-    'char'      => self::STRING,
-    'gzip'      => self::STRING,
-    'varchar'   => self::STRING,
-    'clob'      => self::STRING,
-    'blob'      => self::BLOB,
-    'integer'   => self::INTEGER,
-    'boolean'   => self::BOOLEAN,
-    'int'       => self::INTEGER,
-    'date'      => self::DATE,
-    'time'      => self::TIME,
-    'timestamp' => self::TIMESTAMP,
-    'float'     => self::FLOAT,
-    'double'    => self::DOUBLE,
-    'decimal'   => self::DECIMAL,
-    
-  );
   public function getColumnType($column)
   {
-    if($this->orm == self::PROPEL)
-    {
-      if(is_null($this->version))
-      {
-        $this->version = method_exists('ColumnMap', 'getCreoleType') ? 12 : 13;
-      }
-      if($this->version == 12)
-      {
-        // Propel 1.2
-        if($type = $column->getCreoleType())
-        {
-          $type = self::$propel12ToDbFinderMap[$type];
-        }
-      }
-      else
-      {
-        // Propel 1.3
-        if($type = $column->getType())
-        {
-          $type = self::$propel13ToDbFinderMap[$type];
-        }
-      }
-    }
-    else
-    {
-      // Doctrine
-      if($type = $column->getType())
-      {
-        $type = self::$doctrineToDbFinderMap[$type];
-      }
-    }
-    
-    return $type;
+    return DbFinderColumn::getType($column, $this->orm);
   }
   
   public function getColumnSetter($column, $value, $singleQuotes = false, $prefix = 'this->')
