@@ -451,6 +451,8 @@ $column = sfPropelManyToMany::getColumn($class, $through_class);
     {
 <?php if ($type == DbFinderColumn::STRING): ?>
       $finder->where('<?php echo $name ?>', 'like', '%'.trim($this->filters['<?php echo $column->getName() ?>'], '*%').'%');
+<?php elseif ($type == DbFinderColumn::BOOLEAN): ?>
+      $finder->where('<?php echo $name ?>', (boolean) $this->filters['<?php echo $column->getName() ?>']);
 <?php else: ?>
       $finder->where('<?php echo $name ?>', $this->filters['<?php echo $column->getName() ?>']);
 <?php endif; ?>
