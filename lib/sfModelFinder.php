@@ -325,6 +325,6 @@ abstract class sfModelFinder
       call_user_func_array(array($this->getQueryObject(), $name), $arguments);
       return $this;
     }
-    throw new Exception(sprintf('Undefined method *s::%s()', __CLASS__, $name));
+    throw new Exception(sprintf('Undefined method %s::%s()', __CLASS__, $name));
   }
 }
