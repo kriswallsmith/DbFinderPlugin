@@ -1,14 +1,13 @@
 <?php
 
 /*
- * This file is part of the sfPropelFinder package.
+ * This file is part of the DbFinder package.
  * 
  * (c) 2007 François Zaninotto <francois.zaninotto@symfony-project.com>
  * 
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
- 
 abstract class sfModelFinder
 {
   protected
@@ -100,7 +99,26 @@ abstract class sfModelFinder
   abstract protected function cleanup();
   abstract public function getUniqueIdentifier();
   abstract public function useCache($cacheInstance, $lifetime = 0);
-
+  
+  // Conditions
+  
+  public function _if($cond)
+  {
+    if($cond)
+    {
+      return $this;
+    }
+    else
+    {
+      return new sfModelFinderFake($this);
+    }
+  }
+  
+  public function _endif()
+  {
+    return $this;
+  }
+  
   // Finder Outputters
   
   /**

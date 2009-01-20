@@ -84,6 +84,7 @@
         <file name="DbFinderAdminGenerator.class.php" role="data"/>
         <file name="DbFinderColumn.class.php" role="data"/>
         <file name="sfModelFinder.php" role="data"/>
+        <file name="sfModelFinderFake.php" role="data"/>
         <dir name="doctrine">
           <file name="sfDoctrineFinder.php" role="data"/>
           <file name="sfDoctrineFinderListener.php" role="data"/>

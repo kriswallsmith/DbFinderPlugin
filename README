@@ -539,6 +539,26 @@ You can create several custom finders for a given model, in order to separate th
     // Also works for objects with composite primary keys
     $articleI18n = DbFinder::from('ArticleI18n')->findPk(array(123, 'fr'));
 
+### Using Conditional Methods
+
+    [php]
+    // Finding articles authored by the current user if connected, or all articles otherwise
+    $articles = DbFinder::from('Article')->
+      _if($user->isAuthenticated())->
+        where('AuthorId', $user->getId())->
+      _endif()->
+      orderBy('CreatedAt')->
+      find();
+    // Same as
+    $finder = DbFinder::from('Article');
+    if($user->isAuthenticated())
+    {
+      $finder->where('AuthorId', $user->getId());
+    }
+    $articles = $finder->
+      orderBy('CreatedAt')->
+      find();
+
 ### Using Class Shortcuts
 
     [php]
@@ -629,8 +649,9 @@ TODO / Ideas
 Changelog
 ---------
 
-### 2008-12-05 | Trunk
+### 2009-01-20 | Trunk
 
+* francois: Added `_if()` and `_endif()` methods
 * francois: Fixed an issue with filters on boolean fields in admin generator
 
 ### 2008-12-01 | 1.1.0 Stable
