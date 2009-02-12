@@ -652,6 +652,7 @@ Changelog
 
 ### 2009-02-12 | Trunk
 
+* francois: Added the ability to add helpers in the `generator.yml`
 * francois: Added the ability to link to another module in the admin generator theme
 * francois: Added `_if()` and `_endif()` methods
 * francois: Fixed an issue with filters on boolean fields in admin generator
