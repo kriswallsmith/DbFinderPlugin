@@ -35,7 +35,7 @@ DbFinderAdminGenerator goes a little further and allows to link to the edit view
     list:
       display: [=title, =category]
       fields:
-        category: { module_link: categoryAdmin }
+        category: { link_module: categoryAdmin }
 
 Now the `Category` column will also bear a hyperlink to the related Category object:
 
