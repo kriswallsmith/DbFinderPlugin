@@ -72,6 +72,23 @@ class DbFinderAdminGenerator extends sfGenerator
     }
   }
   
+  public function getColumnLink($column)
+  {
+    if (!$column->isLink()) return false;
+    if ($moduleName = $this->generator->getParameterValue('list.fields.' . $column->getName() . '.link_module'))
+    {
+      // link to another module
+      // FIXME: work with composite pks
+      $pkName = $this->generator->getParameterValue('list.fields.' . $column->getName() . '.link_pk_name', 'id');
+      return array($moduleName, sprintf("%s='.%s->getPrimaryKey()", $pkName, $this->generator->getColumnGetter($column, true)));
+    }
+    else
+    {
+      // link to the current module
+      return array($this->generator->getModuleName(), $this->generator->getPrimaryKeyUrlParams());
+    }
+  }
+  
   /** 
    * Returns HTML code for an action option in a select tag.
    * 

@@ -18,6 +18,31 @@ That's all. The generated module now uses DbFinder calls instead of ORM calls. T
 
 As a bonus, the `DbFinderAdminGenerator` offers a few additional features to facilitate your administration generation.
 
+Inter-module links
+------------------
+
+In the list view, the `display` parameter already allows to set some column as links to the edit view by using an equal sign (`=`):
+
+    list:
+      display: [=title, category]
+
+This will generate, in the `Title` column, the following code:
+
+    <?php echo link_to($article->getTitle(), 'article/edit?id='.$article->getId()) ?>
+
+DbFinderAdminGenerator goes a little further and allows to link to the edit view of *another* module. This is especially useful for foreign key columns:
+
+    list:
+      display: [=title, =category]
+      fields:
+        category: { module_link: categoryAdmin }
+
+Now the `Category` column will also bear a hyperlink to the related Category object:
+
+    <?php echo link_to($article->getCategory(), 'categoryAdmin/edit?id='.$article->getCategory()->getPrimaryKey()) ?>
+
+This was easily achieved with the regular admin generators by using partial columns, but now a simple equal sign does the job.
+
 `with` and `finder_methods`
 ---------------------------
 
