@@ -6,7 +6,7 @@
     [?php if ($sf_user->hasCredential(<?php echo $credentials ?>)): ?]
 <?php endif; ?>
   <?php if (list($moduleLink, $pkLink) = $this->DbFinderAdminGenerator->getColumnLink($column)): ?>
-  <td>[?php echo link_to(<?php echo $this->getColumnListTag($column) ?> ? <?php echo $this->getColumnListTag($column) ?> : __('-'), '<?php echo $moduleLink ?>/edit?<?php echo $pkLink ?>) ?]</td>
+  <td>[?php echo <?php echo $this->getColumnListTag($column) ?> ? link_to(<?php echo $this->getColumnListTag($column) ?>, '<?php echo $moduleLink ?>/edit?<?php echo $pkLink ?>) : __('-') ?]</td>
 <?php else: ?>
   <td>[?php echo <?php echo $this->getColumnListTag($column) ?> ?]</td>
   <?php endif; ?>
