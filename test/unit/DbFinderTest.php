@@ -48,7 +48,7 @@ $article1->save();
 $finder = DbFinder::from('DArticle');
 $article = $finder->findOne();
 $t->isa_ok($finder, 'DbFinder', 'from() called with a Doctrine class name returns a DbFinder');
-$t->is($finder->getType(), DbFinder::DOCTRINE, 'from() called with a Doctrine class name returns a DbFinder with a Doctrine adapter');
+$t->is($finder->getType(), DbFinderAdapterUtils::DOCTRINE, 'from() called with a Doctrine class name returns a DbFinder with a Doctrine adapter');
 $t->ok($article instanceof Doctrine_Record, 'A DbFinder initialized from a Doctrine class returns Doctrine_Record objects');
 
 $article2 = new Article();
@@ -58,7 +58,7 @@ $article2->save();
 $finder = DbFinder::from('Article');
 $article = $finder->findOne();
 $t->isa_ok($finder, 'DbFinder', 'from() called with a Propel class name returns a DbFinder');
-$t->is($finder->getType(), DbFinder::PROPEL, 'from() called with a Doctrine class name returns a DbFinder with a Propel adapter');
+$t->is($finder->getType(), DbFinderAdapterUtils::PROPEL, 'from() called with a Doctrine class name returns a DbFinder with a Propel adapter');
 $t->ok($article instanceof BaseObject, 'A DbFinder initialized from a Propel class returns BaseObject objects');
 
 $finderAsArray = DbFinder::from('Article')->toArray();

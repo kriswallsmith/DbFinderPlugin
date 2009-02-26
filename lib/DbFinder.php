@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of the sfPropelFinder package.
+ * This file is part of the DbFinder package.
  * 
  * (c) 2007 François Zaninotto <francois.zaninotto@symfony-project.com>
  * 
@@ -18,10 +18,6 @@
  */
 class DbFinder extends sfModelFinder
 {
-  const 
-    DOCTRINE = "Doctrine",
-    PROPEL   = "Propel";
-  
   protected
     $adapter = null,
     $type = null;
@@ -33,34 +29,21 @@ class DbFinder extends sfModelFinder
       // using $this->class as a fallback
       if(class_exists($class = $this->class))
       {
-        $tmp = new $class;
-        if($tmp instanceof BaseObject)
-        {
-          $adapter = new sfPropelFinder($class);
-        }
-        else if($tmp instanceof Doctrine_Record)
-        {
-          $adapter = new sfDoctrineFinder($class);
-        }
-        else
-        {
-          throw new Exception('DbFinder constructor expects a protected $class property');
-        }
+        list($adapterClass, $type) = DbFinderAdapterUtils::getParams($class);
+        $this->adapter = new $adapterClass($class);
+        $this->type = $type;
       }
     }
-    else if(!$adapter instanceof sfModelFinder)
+    else if($adapter instanceof sfModelFinder)
+    {
+      $this->adapter = $adapter;
+      $this->type = DbFinderAdapterUtils::getType($adapter);
+    }
+    else
     {
       throw new Exception('DbFinder constructor expects a sfModelFinder instance');
     }
-    $this->adapter = $adapter;
-    if($adapter instanceof sfPropelFinder)
-    {
-      $this->type = self::PROPEL;
-    }
-    else if($adapter instanceof sfDoctrineFinder)
-    {
-      $this->type = self::DOCTRINE;
-    }
+    
     $this->initialize();
   }
   
@@ -153,28 +136,17 @@ class DbFinder extends sfModelFinder
       }
       else
       {
-        throw new Exception('DbFinder::fromClass() only accepts a model object of a finder classname');
+        throw new Exception('DbFinder::fromClass() only accepts a model object or a finder classname');
       }
     }
     else if(class_exists($realClass))
     {
-      $tmp = new $realClass;
-      if($tmp instanceof BaseObject)
-      {
-        $finder = new sfPropelFinder($class, $connection);
-      }
-      else if($tmp instanceof Doctrine_Record)
-      {
-        $finder = new sfDoctrineFinder($class, $connection);
-      }
-      else
-      {
-         throw new Exception('DbFinder::fromClass() only accepts a model object of a finder classname');
-      }
+      list($adapterClass) = DbFinderAdapterUtils::getParams($realClass);
+      $finder = new $adapterClass($class, $connection);
     }
     else
     {
-      throw new Exception('DbFinder::fromClass() only accepts a model object of a finder classname');
+      throw new Exception('DbFinder::fromClass() only accepts a model object or a finder classname');
     }
     
     $me = __CLASS__;
@@ -208,18 +180,8 @@ class DbFinder extends sfModelFinder
     }
     
     $testObject = $collection[0];
-    if($testObject instanceof BaseObject)
-    {
-      $finder = sfPropelFinder::fromCollection($collection, $class, $pkName);
-    }
-    else if($testObject instanceof Doctrine_Record)
-    {
-      $finder = sfDoctrineFinder::fromCollection($collection, $class, $pkName);
-    }
-    else
-    {
-      throw new Exception('A DbFinder can only be initialized from an array of Propel or Doctrine objects');
-    }
+    list($adapterClass) = DbFinderAdapterUtils::getParams($collection[0]);
+    $finder = call_user_func(array($adapterClass, 'fromCollection'), $collection, $class, $pkName);
     
     if(class_exists($finderClass = get_class($testObject).'Finder'))
     {

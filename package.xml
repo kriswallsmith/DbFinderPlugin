@@ -81,12 +81,14 @@
       </dir>
       <dir name="lib">
         <file name="DbFinder.php" role="data"/>
+        <file name="DbFinderAdapterUtils.class.php" role="data"/>
         <file name="DbFinderAdminGenerator.class.php" role="data"/>
         <file name="DbFinderColumn.class.php" role="data"/>
         <file name="sfModelFinder.php" role="data"/>
         <file name="sfModelFinderFake.php" role="data"/>
         <dir name="doctrine">
           <file name="sfDoctrineFinder.php" role="data"/>
+          <file name="sfDoctrineFinderColumn.php" role="data"/>
           <file name="sfDoctrineFinderListener.php" role="data"/>
           <file name="sfDoctrineFinderPager.php" role="data"/>
           <file name="sfDoctrineFinderRecordTemplate.php" role="data"/>
@@ -94,6 +96,7 @@
         <dir name="propel">
           <file name="sfPropelFinder.php" role="data"/>
           <file name="sfPropelFinderCache.php" role="data"/>
+          <file name="sfPropelFinderColumn.php" role="data"/>
           <file name="sfPropelFinderPager.php" role="data"/>
           <file name="sfPropelFinderUtils.php" role="data"/>
         </dir>

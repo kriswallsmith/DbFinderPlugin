@@ -2,9 +2,6 @@
 
 class DbFinderAdminGenerator extends sfGenerator
 {
-  const
-    PROPEL     = 'Propel',
-    DOCTRINE   = 'Doctrine';
   protected
     $generator = null,
     $orm       = null;
@@ -26,7 +23,6 @@ class DbFinderAdminGenerator extends sfGenerator
       throw new sfParseException($error);
     }
     $modelClass = $params['model_class'];
-
     if (!class_exists($modelClass))
     {
       $error = 'Unable to scaffold unexistant model "%s"';
@@ -35,17 +31,10 @@ class DbFinderAdminGenerator extends sfGenerator
       throw new sfInitializationException($error);
     }
     
-    $tmp = new $modelClass;
-    if($tmp instanceof BaseObject)
-    {
-      $this->generator = new sfPropelAdminGenerator($this->generatorManager);
-      $this->orm = self::PROPEL;
-    }
-    elseif($tmp instanceof Doctrine_Record)
-    {
-      $this->generator = new sfDoctrineAdminGenerator($this->generatorManager);
-      $this->orm = self::DOCTRINE;
-    }
+    list($generatorClass, $type) = DbFinderAdapterUtils::getGenerator($modelClass);
+    $this->generator = new $generatorClass($this->generatorManager);
+    $this->orm = $type;
+
     // Manual initialization required for symfony 1.0
     $this->generator->initialize($this->generatorManager);
     $this->generator->setGeneratorClass('DbFinderAdmin');
@@ -61,7 +50,7 @@ class DbFinderAdminGenerator extends sfGenerator
   
   public function getColumnSetter($column, $value, $singleQuotes = false, $prefix = 'this->')
   {
-    if($this->orm == self::PROPEL)
+    if($this->orm == DbFinderAdapterUtils::PROPEL)
     {
       if ($singleQuotes) $value = sprintf("'%s'", $value);
       return sprintf('$%s%s->set%s(%s)', $prefix, $this->getSingularName(), $column->getPhpName(), $value);

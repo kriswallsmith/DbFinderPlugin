@@ -650,8 +650,9 @@ TODO / Ideas
 Changelog
 ---------
 
-### 2009-02-12 | Trunk
+### 2009-02-26 | Trunk
 
+* francois: Added the ability to add new adapters (for arrays, web services, BigTable and the likes)
 * francois: Added the ability to add helpers in the `generator.yml`
 * francois: Added the ability to link to another module in the admin generator theme
 * francois: Added `_if()` and `_endif()` methods
