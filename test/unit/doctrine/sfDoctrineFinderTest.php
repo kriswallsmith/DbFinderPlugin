@@ -49,7 +49,7 @@ include dirname(__FILE__).'/../../bootstrap.php';
 // cleanup database
 Doctrine_Query::create()->delete()->from('DArticle')->execute();
 
-$t = new lime_test(137, new lime_output_color());
+$t = new lime_test(138, new lime_output_color());
 
 $t->diag('find()');
 
@@ -578,6 +578,17 @@ $t->is(
 );
 
 $finder = sfDoctrineFinder::from('DArticle')->
+  where('Title', 'is null', null, 'cond1')->
+  where('Title', '=', 'bar', 'cond2')->
+  combine(array('cond1', 'cond2'), 'or');
+$finder->find();
+$t->is(
+  $finder->getLatestQuery(),
+  $baseSelect . "(d.title IS NULL OR d.title = 'bar')",
+  'combine() accepts named conditions with null value'
+);
+
+$finder = sfDoctrineFinder::from('DArticle')->
   where('Title', '=', 'foo', 'cond1')->
   where('Title', '=', 'bar', 'cond2')->
   where('Title', '=', 'foobar')->
@@ -640,6 +651,8 @@ $t->is(
   $baseSelect . "(d.title = 'foo' OR d.title = 'bar' OR d.title = 'foobar')",
   'combine() can combine more than two conditions'
 );
+
+
 
 $t->diag('limit() and offset()');
 

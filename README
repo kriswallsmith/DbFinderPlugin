@@ -650,8 +650,9 @@ TODO / Ideas
 Changelog
 ---------
 
-### 2009-02-26 | Trunk
+### 2009-03-02 | Trunk
 
+* francois: Fixed a bug in sfDoctrineFinder when using named conditions with a null value (patch from Maksymus007)
 * francois: Added the ability to add new adapters (for arrays, web services, BigTable and the likes)
 * francois: Added the ability to add helpers in the `generator.yml`
 * francois: Added the ability to link to another module in the admin generator theme

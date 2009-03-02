@@ -981,6 +981,7 @@ class sfDoctrineFinder extends sfModelFinder
         if(is_null($value))
         {
           $this->namedPatterns[$namedCondition] = sprintf('%s %s', $column, $comparison);
+          $this->namedArgs[$namedCondition] = array();
         }
         else
         {

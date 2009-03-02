@@ -40,7 +40,7 @@ include dirname(__FILE__).'/../../bootstrap.php';
 CommentPeer::doDeleteAll();
 ArticlePeer::doDeleteAll();
 
-$t = new lime_test(136, new lime_output_color());
+$t = new lime_test(137, new lime_output_color());
 
 $t->diag('find()');
 
@@ -552,6 +552,17 @@ $t->is(
   $finder->getLatestQuery(),
   $baseSelect . "(article.TITLE='foo' AND article.TITLE='bar')",
   'combine() combines conditions into the main criteria'
+);
+
+$finder = sfPropelFinder::from('Article')->
+  where('Title', 'is null', null, 'cond1')->
+  where('Title', '=', 'bar', 'cond2')->
+  combine(array('cond1', 'cond2'), 'or');
+$finder->find();
+$t->is(
+  $finder->getLatestQuery(),
+  $baseSelect . "(article.TITLE IS NULL  OR article.TITLE='bar')",
+  'combine() accepts named conditions with null value'
 );
 
 $finder = sfPropelFinder::from('Article')->
