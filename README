@@ -597,6 +597,7 @@ You can create several custom finders for a given model, in order to separate th
     $articles = $finder->
       orderBy('CreatedAt')->
       find();
+    // Available condtional methods are _if(), _elseif(), _else(), and _endif()
 
 ### Using Class Shortcuts
 
@@ -691,6 +692,7 @@ Changelog
 
 ### 2009-03-03 | Trunk
 
+* francois: Added `_else()` and `_elseif()` methods
 * francois: Added `whereCustom()` and `orWhereCustom()` in both adapters
 * francois: Fixed a bug in sfDoctrineFinder when using named conditions with a null value (patch from Maksymus007)
 * francois: Added the ability to add new adapters (for arrays, web services, BigTable and the likes)

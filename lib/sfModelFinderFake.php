@@ -10,7 +10,7 @@
  */
 
 /**
- * Fakes a sfModelFinder instance by doing nothing until _endif() is called
+ * Fakes a sfModelFinder instance for _if() / _elseif() / _else() / _endif() logic
  */
 class sfModelFinderFake
 {
@@ -19,6 +19,28 @@ class sfModelFinderFake
   public function __construct($finder)
   {
     $this->finder = $finder;
+  }
+  
+  public function _if()
+  {
+    throw new Exception('_if() statements cannot be nested');
+  }
+  
+  public function _elseif($cond)
+  {
+    if($cond)
+    {
+      return $this->finder;
+    }
+    else
+    {
+      return $this;
+    }
+  }
+  
+  public function _else()
+  {
+    return $this->finder;
   }
   
   public function _endif()

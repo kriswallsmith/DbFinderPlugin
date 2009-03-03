@@ -116,6 +116,23 @@ abstract class sfModelFinder
     }
   }
   
+  public function _elseif($cond)
+  {
+    if($cond)
+    {
+      return new sfModelFinderFake($this);
+    }
+    else
+    {
+      return new sfModelFinderFake($this);
+    }
+  }
+  
+  public function _else()
+  {
+    return new sfModelFinderFake($this);
+  }
+    
   public function _endif()
   {
     return $this;
