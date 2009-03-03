@@ -85,6 +85,8 @@ abstract class sfModelFinder
   abstract public function where();
   abstract public function orWhere();
   abstract public function combine($conditions, $operator = 'and', $namedCondition = null);
+  abstract public function whereCustom($condition, $values = array(), $namedCondition = null);
+  abstract public function orWhereCustom($condition, $values = array());
   abstract public function relatedTo($object);
   abstract public function orderBy($columnName, $order = null);
   abstract public function groupBy($columnName);
@@ -286,6 +288,46 @@ abstract class sfModelFinder
     {
       return sfInflector::underscore($arg);
     }
+  }
+  
+  public static function isAssoc($array)
+  {
+    foreach (array_keys($array) as $k => $v) 
+    {
+      if ($k !== $v)
+      {
+        return true;
+      }
+    }
+    return false;
+  }
+  
+  /**
+   * Replace complete column names (like Article.Title) in an SQL clause by its exact Propel column name
+   * @param string $clause SQL clause to inspect
+   * 
+   * @return array A list with:
+   *                 - The SQL clause where found complete column names were replaced
+   *                 - The array of Propel Column names used for replacement
+   */
+  protected function replaceNames($clause)
+  {
+    preg_match_all('/\w+\.\w+/', $clause, $matches);
+    $colnames = array();
+    foreach ($matches[0] as $key)
+    {
+      try
+      {
+        $colname = $this->getColName($key);
+        $colnames[]= $colname;
+        $clause = str_replace($key, $colname, $clause);
+      }
+      catch(Exception $e)
+      {
+        // Do nothing: the match is probably not a ClassName.ColumnName identifier (e.g. decimal number)
+      }
+    }
+    return array($clause, $colnames);
   }
   
   /**

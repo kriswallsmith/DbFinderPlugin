@@ -49,7 +49,7 @@ include dirname(__FILE__).'/../../bootstrap.php';
 // cleanup database
 Doctrine_Query::create()->delete()->from('DArticle')->execute();
 
-$t = new lime_test(138, new lime_output_color());
+$t = new lime_test(148, new lime_output_color());
 
 $t->diag('find()');
 
@@ -540,6 +540,95 @@ $t->is(
   'orWhere() works on a multiple jointure'
 );
 
+$t->diag('whereCustom');
+
+$finder = sfDoctrineFinder::from('DArticle')->
+  whereCustom('upper(DArticle.Title) = ?', 'foo');
+$finder->find();
+$t->is(
+  $finder->getLatestQuery(),
+  $baseSelect . "WHERE UPPER(d.title) = 'foo'",
+  'whereCustom() adds a custom SQL AND clause and replaces the ? token by the value passed as second argument'
+);
+
+$finder = sfDoctrineFinder::from('DArticle')->
+  whereCustom('upper(DArticle.Title) = %s', 'foo');
+$finder->find();
+$t->is(
+  $finder->getLatestQuery(),
+  $baseSelect . "WHERE UPPER(d.title) = 'foo'",
+  'whereCustom() adds a custom SQL AND clause and replaces the %s token by the value passed as second argument'
+);
+
+$finder = sfDoctrineFinder::from('DArticle')->
+  whereCustom('upper(DArticle.Title) = ? + ?', array('foo', 'bar'));
+$finder->find();
+$t->is(
+  $finder->getLatestQuery(),
+  $baseSelect . "WHERE UPPER(d.title) = 'foo' + 'bar'",
+  'whereCustom() adds a custom SQL AND clause and replaces the ? tokens by the values passed as an array in second argument'
+);
+
+$finder = sfDoctrineFinder::from('DArticle')->
+  whereCustom('upper(DArticle.Title) = %dude% + %dudy%', array('%dude%' => 'foo', '%dudy%' => 'bar'));
+$finder->find();
+$t->is(
+  $finder->getLatestQuery(),
+  $baseSelect . "WHERE UPPER(d.title) = 'foo' + 'bar'",
+  'whereCustom() adds a custom SQL AND clause and replaces the ? tokens by the values passed as an associative array in second argument'
+);
+
+$finder = sfDoctrineFinder::from('DArticle')->
+  whereCustom('upper(DArticle.Title) = ?', "foo'");
+$finder->find();
+$t->is(
+  $finder->getLatestQuery(),
+  $baseSelect . "WHERE UPPER(d.title) = 'foo''",
+  'whereCustom() properly escapes values'
+);
+
+$finder = sfDoctrineFinder::from('DArticle')->
+  whereCustom('upper(DArticle.Title) = ?', 1);
+$finder->find();
+$t->is(
+  $finder->getLatestQuery(),
+  $baseSelect . "WHERE UPPER(d.title) = '1'",
+  'whereCustom() considers all values as strings'
+);
+
+$finder = sfDoctrineFinder::from('DArticle')->
+  where('Title', 'foo')->
+  whereCustom('upper(DArticle.Title) = ?', 'bar');
+$finder->find();
+$t->is(
+  $finder->getLatestQuery(),
+  $baseSelect . "WHERE (d.title = 'foo' AND UPPER(d.title) = 'bar')",
+  'whereCustom() adds an SQL AND clause'
+);
+
+$t->diag('orWhereCustom');
+
+
+$finder = sfDoctrineFinder::from('DArticle')->
+  orWhereCustom('upper(DArticle.Title) = ?', 'foo');
+$finder->find();
+$t->is(
+  $finder->getLatestQuery(),
+  $baseSelect . "WHERE UPPER(d.title) = 'foo'",
+  'orWhereCustom() acts like whereCustom() when there is only one condition'
+);
+
+$finder = sfDoctrineFinder::from('DArticle')->
+  where('Title', 'foo')->
+  orWhereCustom('upper(DArticle.Title) = ?', 'bar');
+$finder->find();
+$t->is(
+  $finder->getLatestQuery(),
+  $baseSelect . "WHERE (d.title = 'foo' OR UPPER(d.title) = 'bar')",
+  'whereCustom() adds an SQL OR clause'
+);
+
+
 $t->diag('combine()');
 
 $columns    = "d.id AS d__id, d.title AS d__title, d.category_id AS d__category_id";
@@ -652,6 +741,16 @@ $t->is(
   'combine() can combine more than two conditions'
 );
 
+$finder = sfDoctrineFinder::from('DArticle')->
+  whereCustom('upper(DArticle.Title) = ?', 'foo', 'cond1')->
+  whereCustom('upper(DArticle.Title) = ?', 'bar', 'cond2')->
+  combine(array('cond1', 'cond2'), 'or');
+$finder->find();
+$t->is(
+  $finder->getLatestQuery(),
+  $baseSelect . "(UPPER(d.title) = 'foo' OR UPPER(d.title) = 'bar')",
+  'combine() combines conditions added by way of whereCustom()'
+);
 
 
 $t->diag('limit() and offset()');

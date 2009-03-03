@@ -953,19 +953,7 @@ class sfPropelFinder extends sfModelFinder
     }
     if($isCalculationColumn)
     {
-      preg_match_all('/\w+\.\w+/', $column, $matches);
-      foreach ($matches[0] as $key)
-      {
-        try
-        {
-          $colname = $this->getColName($key);
-          $column = str_replace($key, $colname, $column);
-        }
-        catch(Exception $e)
-        {
-          // Do nothing: the match is probably not a ClassName.ColumnName identifier (e.g. decimal number)
-        }
-      }
+      list($column, $colnames) = $this->replaceNames($column);
       $peerClass = null;
     }
     else
@@ -1058,7 +1046,7 @@ class sfPropelFinder extends sfModelFinder
     
     return $this;
   }
-
+  
   /**
    * Finder Fluid Interface for Criteria::addOr()
    * Infers $column, $value, $comparison from $columnName and some optional arguments
@@ -1103,7 +1091,82 @@ class sfPropelFinder extends sfModelFinder
       $this->criterions []= $criterion;
     }
   }
-
+  
+  /**
+   * Allow for a custom condition and takes care of parameter escaping
+   * Examples:
+   *   $articleFinder->whereCustom('UPPER(Article.Title) = ?', $title)
+   *    => $c->add(ArticlePeer::TITLE, 'UPPER('.ArticlePeer::TITLE.') = ' . $con->quote($title), Criteria::CUSTOM);
+   *   $articleFinder->whereCustom('CONCAT(Article.Title, ?) = ?, array('foo', $title));
+   *    => $c->add(ArticlePeer::TITLE, 'CONCAT('.ArticlePeer::TITLE.', '$con->quote('foo')') = ' . $con->quote($title), Criteria::CUSTOM);
+   *   $articleFinder->whereCustom('UPPER(Article.Title) = %foo%', array('%foo%' => $title))
+   *    => $c->add(ArticlePeer::TITLE, 'UPPER('.ArticlePeer::TITLE.') = ' . $con->quote($title), Criteria::CUSTOM);
+   *
+   * @param      string  $condition SQL clause containing at least the complete name of a column
+   * @param      mixed  $values Array of values to be escaped and replaced in the clause
+   * @param      string  $namedCondition  If condition is to be stored for later combination (see combine())
+   *
+   * @return     sfPropelFinder the current finder object
+   */
+  public function whereCustom($condition, $values = array(), $namedCondition = null)
+  {
+    $this->addCustomCondition($condition, $values, 'And', $namedCondition);
+    
+    return $this;
+  }
+  
+  /**
+   * Allow for a custom OR condition and takes care of parameter escaping
+   * 
+   * @see whereCustom()
+   *
+   * @param      string  $condition SQL clause containing at least the complete name of a column
+   * @param      mixed  $values Array of values to be escaped and replaced in the clause
+   *
+   * @return     sfPropelFinder the current finder object
+   */
+  public function orWhereCustom($condition, $values = array())
+  {
+    $this->addCustomCondition($condition, $values, 'Or');
+    
+    return $this;
+  }
+  
+  protected function addCustomCondition($condition, $values = array(), $comparison, $namedCondition = null)
+  {
+    $condition = str_replace('?', '%s', $condition);
+    list($condition, $colnames) = $this->replaceNames($condition);
+    if(!$colnames)
+    {
+      throw new Exception('Custom conditions require an expression containing complete column names');
+    }
+    if(!is_array($values))
+    {
+      $values = array($values);
+    }
+    if (!empty($values))
+    {
+      // Escape values
+      $connection = $this->getPDOConnection();
+      foreach ($values as $key => $value)
+      {
+        $values[$key] = $connection->quote($value);
+      }
+      // Replace tokens by values
+      if(self::isAssoc($values))
+      {
+        $condition = str_replace(array_keys($values), array_values($values), $condition);
+      }
+      else
+      {
+        $condition = vsprintf($condition, $values);
+      }
+    }
+    $this->addCondition($comparison, $colnames[0], $condition, Criteria::CUSTOM, $namedCondition);
+    
+    return $this;
+  }
+  
   /**
    * Combine named conditions into the main criteria or into a new named condition
    * Named conditions are to be defined in where()
@@ -1565,6 +1628,28 @@ class sfPropelFinder extends sfModelFinder
     }
     
     return $this;
+  }
+  
+  protected function getPDOConnection()
+  {
+    $connection = $this->getConnection();
+    if(!method_exists($connection, 'quote'))
+    {
+      // Propel 1.2
+      // Unfortunately Creole can't do escaping on its own.
+      // So we'll fallback to PDO if available (yeah it's ugly)
+      if(!class_exists('PDO'))
+      {
+        throw new Exception('DbFinder requires PDO when using Propel 1.2');
+      }
+      $dsn = $connection->getDSN();
+      $dns =  $dsn['phptype'] . ':' .
+              (!empty($dsn['host']) ? (':host=' . $dsn['hostspec']) : '') .
+              (!empty($dsn['port']) ? (';port=' . $dsn['port']) : '') .
+              ($dsn['phptype'] == 'sqlite' ? $dsn['database'] : ';dbname=' . $dsn['database']);
+      $connection = new PDO($dns, $dsn['username'], $dsn['password']);
+    }
+    return $connection;
   }
   
   /**

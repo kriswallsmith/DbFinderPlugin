@@ -814,19 +814,7 @@ class sfDoctrineFinder extends sfModelFinder
     }
     if ($isCalculationColumn)
     {
-      preg_match_all('/\w+\.\w+/', $column, $matches);
-      foreach ($matches[0] as $key)
-      {
-        try
-        {
-          $colname = $this->getColName($key);
-          $column = str_replace($key, $colname, $column);
-        }
-        catch(Exception $e)
-        {
-          // Do nothing: the match is probably not a ClassName.ColumnName identifier (e.g. decimal number)
-        }
-      }
+      list($column, $colnames) = $this->replaceNames($column);
       $this->withColumns[$alias] = array(
         'class'    => 'calculated',
         'column'   => $column,
@@ -941,7 +929,7 @@ class sfDoctrineFinder extends sfModelFinder
     
     return $this;
   }
-
+  
   protected function addCondition($cond = 'and', $column, $comparison, $value, $namedCondition = null)
   {
     if($comparison == ' NOT IN ')
@@ -1008,6 +996,114 @@ class sfDoctrineFinder extends sfModelFinder
         }
       }
     }
+  }
+  
+  /**
+   * Allow for a custom condition and takes care of parameter escaping
+   * Examples:
+   *   $articleFinder->whereCustom('UPPER(Article.Title) = ?', $title)
+   *    => $query->addWhere('UPPER(article.title) = ?', array($title))
+   *   $articleFinder->whereCustom('CONCAT(Article.Title, ?) = ?, array('foo', $title));
+   *    => $query->addWhere('CONCAT(Article.Title, ?) = ?', array('foo', $title))
+   *   $articleFinder->whereCustom('UPPER(Article.Title) = %foo%', array('%foo%' => $title))
+   *    => $query->addWhere('UPPER(article.title) = :p1', array('p1' => $title))
+   *
+   * @param      string  $condition SQL clause containing at least the complete name of a column
+   * @param      mixed  $values Array of values to be escaped and replaced in the clause
+   * @param      string  $namedCondition  If condition is to be stored for later combination (see combine())
+   *
+   * @return     sfDoctrineFinder the current finder object
+   */
+  public function whereCustom($condition, $values = array(), $namedCondition = null)
+  {
+    $this->addCustomCondition($condition, $values, 'And', $namedCondition);
+    
+    return $this;
+  }
+  
+  /**
+   * Allow for a custom OR condition and takes care of parameter escaping
+   *
+   * @see whereCustom()
+   *
+   * @param      string  $condition SQL clause containing at least the complete name of a column
+   * @param      mixed  $values Array of values to be escaped and replaced in the clause
+   *
+   * @return     sfDoctrineFinder the current finder object
+   */
+  public function orWhereCustom($condition, $values = array())
+  {
+    $this->addCustomCondition($condition, $values, 'Or');
+    
+    return $this;
+  }
+  
+  protected function addCustomCondition($condition, $values = array(), $comparison, $namedCondition = null)
+  {
+    list($condition, $colnames) = $this->replaceNames($condition);
+    if(!$colnames)
+    {
+      throw new Exception('whereCustom() expects an expression containing complete column names');
+    }
+    if(!is_array($values))
+    {
+      $values = array($values);
+    }
+    if(!empty($values))
+    {
+      // replace token by PDO tokens
+      $namedValues = array();
+      while(strpos($condition, '?') !== false)
+      {
+        $argName = ':param'.$this->argNumber;
+        $this->argNumber++;
+        $pos = strpos($condition, '?');
+        $condition = substr($condition, 0, $pos) . $argName . substr($condition, $pos + 1);
+        $namedValues[$argName] = array_shift($values);
+      }
+      while(strpos($condition, '%s') !== false)
+      {
+        $argName = ':param'.$this->argNumber;
+        $this->argNumber++;
+        $pos = strpos($condition, '%s');
+        $condition = substr($condition, 0, $pos) . $argName . substr($condition, $pos + 2);
+        $namedValues[$argName] = array_shift($values);
+      }
+      while(preg_match('/\%.+?\%/', $condition, $matches))
+      {
+        $argName = ':param'.$this->argNumber;
+        $this->argNumber++;
+        $condition = str_replace($matches[0], $argName, $condition);
+        $namedValues[$argName] = array_shift($values);
+      }
+      $values = $namedValues;
+    }
+    if($namedCondition)
+    {
+      $this->namedPatterns[$namedCondition] = $condition;
+      if(empty($values))
+      {
+        $this->namedArgs[$namedCondition] = array();
+      }
+      else
+      {
+        foreach ($values as $key => $value)
+        {
+          $this->namedArgs[$namedCondition][$key] = $value;
+        }
+      }
+    }
+    else
+    {
+      // The operator of the first condition is ignored
+      $comparison = $this->queryPattern ? $comparison : '';
+      $this->queryPattern .= sprintf(' %s %s', $comparison, $condition);
+      foreach ($values as $key => $value)
+      {
+        $this->queryArgs[$key] = $value;
+      }
+    }
+    return $this;
   }
   
   /**

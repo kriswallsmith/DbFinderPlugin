@@ -40,7 +40,7 @@ include dirname(__FILE__).'/../../bootstrap.php';
 CommentPeer::doDeleteAll();
 ArticlePeer::doDeleteAll();
 
-$t = new lime_test(137, new lime_output_color());
+$t = new lime_test(147, new lime_output_color());
 
 $t->diag('find()');
 
@@ -517,6 +517,93 @@ $t->is(
   'orWhere() works on a multiple jointure'
 );
 
+$t->diag('whereCustom');
+
+$finder = sfPropelFinder::from('Article')->
+  whereCustom('upper(Article.Title) = ?', 'foo');
+$finder->find();
+$t->is(
+  $finder->getLatestQuery(),
+  $baseSelect . "upper(article.TITLE) = 'foo'",
+  'whereCustom() adds a custom SQL AND clause and replaces the ? token by the value passed as second argument'
+);
+
+$finder = sfPropelFinder::from('Article')->
+  whereCustom('upper(Article.Title) = %s', 'foo');
+$finder->find();
+$t->is(
+  $finder->getLatestQuery(),
+  $baseSelect . "upper(article.TITLE) = 'foo'",
+  'whereCustom() adds a custom SQL AND clause and replaces the %s token by the value passed as second argument'
+);
+
+$finder = sfPropelFinder::from('Article')->
+  whereCustom('upper(Article.Title) = ? + ?', array('foo', 'bar'));
+$finder->find();
+$t->is(
+  $finder->getLatestQuery(),
+  $baseSelect . "upper(article.TITLE) = 'foo' + 'bar'",
+  'whereCustom() adds a custom SQL AND clause and replaces the ? tokens by the values passed as an array in second argument'
+);
+
+$finder = sfPropelFinder::from('Article')->
+  whereCustom('upper(Article.Title) = %dude% + %dudy%', array('%dude%' => 'foo', '%dudy%' => 'bar'));
+$finder->find();
+$t->is(
+  $finder->getLatestQuery(),
+  $baseSelect . "upper(article.TITLE) = 'foo' + 'bar'",
+  'whereCustom() adds a custom SQL AND clause and replaces the ? tokens by the values passed as an associative array in second argument'
+);
+
+$finder = sfPropelFinder::from('Article')->
+  whereCustom('upper(Article.Title) = ?', "foo'");
+$finder->find();
+$t->is(
+  $finder->getLatestQuery(),
+  $baseSelect . "upper(article.TITLE) = 'foo'''",
+  'whereCustom() properly escapes values'
+);
+
+$finder = sfPropelFinder::from('Article')->
+  whereCustom('upper(Article.Title) = ?', 1);
+$finder->find();
+$t->is(
+  $finder->getLatestQuery(),
+  $baseSelect . "upper(article.TITLE) = '1'",
+  'whereCustom() considers all values as strings'
+);
+
+$finder = sfPropelFinder::from('Article')->
+  where('Title', 'foo')->
+  whereCustom('upper(Article.Title) = ?', 'bar');
+$finder->find();
+$t->is(
+  $finder->getLatestQuery(),
+  $baseSelect . "(article.TITLE='foo' AND upper(article.TITLE) = 'bar')",
+  'whereCustom() adds an SQL AND clause'
+);
+
+$t->diag('orWhereCustom');
+
+$finder = sfPropelFinder::from('Article')->
+  orWhereCustom('upper(Article.Title) = ?', 'foo');
+$finder->find();
+$t->is(
+  $finder->getLatestQuery(),
+  $baseSelect . "upper(article.TITLE) = 'foo'",
+  'orWhereCustom() acts like whereCustom() when there is only one condition'
+);
+
+$finder = sfPropelFinder::from('Article')->
+  where('Title', 'foo')->
+  orWhereCustom('upper(Article.Title) = ?', 'bar');
+$finder->find();
+$t->is(
+  $finder->getLatestQuery(),
+  $baseSelect . "(article.TITLE='foo' OR upper(article.TITLE) = 'bar')",
+  'whereCustom() adds an SQL OR clause'
+);
+
 $t->diag('combine()');
 
 $columns    = "article.ID, article.TITLE, article.CATEGORY_ID";
@@ -627,6 +714,17 @@ $t->is(
   $finder->getLatestQuery(),
   $baseSelect . "((article.TITLE='foo' OR article.TITLE='bar') OR article.TITLE='foobar')",
   'combine() can combine more than two conditions'
+);
+
+$finder = sfPropelFinder::from('Article')->
+  whereCustom('upper(Article.Title) = ?', 'foo', 'cond1')->
+  whereCustom('upper(Article.Title) = ?', 'bar', 'cond2')->
+  combine(array('cond1', 'cond2'), 'or');
+$finder->find();
+$t->is(
+  $finder->getLatestQuery(),
+  $baseSelect . "(upper(article.TITLE) = 'foo' OR upper(article.TITLE) = 'bar')",
+  'combine() combines conditions added by way of whereCustom()'
 );
 
 $t->diag('limit() and offset()');

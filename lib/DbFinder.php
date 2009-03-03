@@ -458,10 +458,20 @@ class DbFinder extends sfModelFinder
    *   $article = $articleFinder->withColumn('Author.Name', 'authorName', 'string')->findOne();
    *   $authorName = $article->getColumn('authorName');
    *
-   *   // Support for calculated columns
+   *   // Support for calculated columns with native database column names
    *   $articles = articleFinder->
    *     join('Comment')->
    *     withColumn('COUNT(comment.ID)', 'NbComments')->
+   *     groupBy('Article.Id')->
+   *     find();
+   *
+   *   // Support for calculated columns with DbFinder-style column names
+   *   // Warning: only works if
+   *   //  - the column names include the class name, e.g. 'Comment.Id', not 'Id' alone
+   *   //  - the column names are inside parenthesis, e.g. '(Comment.Id + Article.Id)', not 'Comment.Id + Article.Id'
+   *   $articles = articleFinder->
+   *     join('Comment')->
+   *     withColumn('COUNT(Comment.Id)', 'NbComments')->
    *     groupBy('Article.Id')->
    *     find();
    *
@@ -563,6 +573,46 @@ class DbFinder extends sfModelFinder
   {
     $args = func_get_args();
     call_user_func_array(array($this->adapter, 'orWhere'), $args);
+    
+    return $this;
+  }
+  
+  /**
+   * Allow for a custom condition and takes care of parameter escaping
+   * Examples:
+   *   $articleFinder->whereCustom('UPPER(Article.Title) = ?', $title)
+   *    =>  WHERE UPPER(article.TITLE) = '[escaped $title]';
+   *   $articleFinder->whereCustom('CONCAT(Article.Title, ?) = ?, array('foo', $title));
+   *    =>  WHERE CONCAT(article.TITLE, 'foo') = '[escaped $title]';
+   *    $articleFinder->whereCustom('UPPER(Article.Title) = %foo%', array('%foo%' => $title))
+   *    =>  WHERE UPPER(article.TITLE) = '[escaped $title]';
+   *
+   * @param      string  $condition SQL clause containing at least the complete name of a column
+   * @param      mixed  $values Array of values to be escaped and replaced in the clause
+   * @param      string  $namedCondition  If condition is to be stored for later combination (see combine())
+   *
+   * @return     sfPropelFinder the current finder object
+   */
+  public function whereCustom($condition, $values = array(), $namedCondition = null)
+  {
+    $this->adapter->whereCustom($condition, $values, $namedCondition);
+    
+    return $this;
+  }
+  
+  /**
+   * Allow for a custom OR condition and takes care of parameter escaping
+   * 
+   * @see whereCustom()
+   *
+   * @param      string  $condition SQL clause containing at least the complete name of a column
+   * @param      mixed  $values Array of values to be escaped and replaced in the clause
+   *
+   * @return     sfPropelFinder the current finder object
+   */
+  public function orWhereCustom($condition, $values = array())
+  {
+    $this->adapter->orWhereCustom($condition, $values);
     
     return $this;
   }

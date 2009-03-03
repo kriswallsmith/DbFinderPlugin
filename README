@@ -114,6 +114,37 @@ Usage
     // Or, when your search is on a single column, use the magic findByXXX() method
     $articles = $articleFinder->findByTitle('foo');
 
+### Using functions in a WHERE clause
+
+    [php]
+    // When you need to apply a function, use whereCustom() instead of where()
+    $articleFinder = DbFinder::from('Article');
+    // Finding all Articles for a given month
+    $articles = $articleFinder->
+      whereCustom('date_format(Article.Title, \'%%y%%m\') = ?', $month)->
+      find();
+    // Notice that you must use the composed column name and the comparison operator
+    // The finder will escape the $month parameter, so there is no risk of SQL injection
+
+    // Finding all Articles where upper(title) = 'foo' + 'bar'
+    $articles = $articleFinder->
+      whereCustom('upper(Article.Title) = ? + ?', array('foo', 'bar'))->
+      find();
+    // When there is more than one parameter, use an array as second argument
+
+    // Finding all Articles where PublishedAt is null AND upper(title) = 'foo'
+    $articles = $articleFinder->
+      where('PublishedAt', 'is null', null)->
+      whereCustom('upper(Article.Title) = ?', 'foo')->
+      find();
+    // whereCustom() adds a condition with 'AND'
+    // Finding all Articles where PublishedAt is null OR upper(title) = 'foo'
+    $articles = $articleFinder->
+      where('PublishedAt', 'is null', null)->
+      orWhereCustom('upper(Article.Title) = ?', 'foo')->
+      find();
+    // orWhereCustom() adds a condition with 'OR'
+    
 ### Ordering results
 
     [php]
@@ -295,6 +326,14 @@ Compare it to the code required to get these `Comment` objects without `DbFinder
     //  OR
     //  (article.PUBLISHED_AT <= $end AND article.PUBLISHED_AT >= $begin)
     // );
+    
+    // combine() also accepts named conditions added by whereCustom()
+    $article = DbFinder::from('Article')->
+      whereCustom('upper(Article.Title) = ?', 'Foo', 'cond1')->
+      whereCustom('upper(Article.Title) = ?', 'Bar', 'cond2')->
+      combine(array('cond1', 'cond2'), 'or')->
+      findOne();
+    // SELECT article.* FROM article WHERE (UPPER(article.TITLE) = 'foo' OR UPPER(article.TITLE) = 'bar');
 
 ### Minimizing queries
 
@@ -650,8 +689,9 @@ TODO / Ideas
 Changelog
 ---------
 
-### 2009-03-02 | Trunk
+### 2009-03-03 | Trunk
 
+* francois: Added `whereCustom()` and `orWhereCustom()` in both adapters
 * francois: Fixed a bug in sfDoctrineFinder when using named conditions with a null value (patch from Maksymus007)
 * francois: Added the ability to add new adapters (for arrays, web services, BigTable and the likes)
 * francois: Added the ability to add helpers in the `generator.yml`
