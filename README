@@ -126,22 +126,22 @@ Usage
     // Notice that you must use the composed column name and the comparison operator
     // The finder will escape the $month parameter, so there is no risk of SQL injection
 
-    // Finding all Articles where upper(title) = 'foo' + 'bar'
+    // Finding all Articles where upper(title) = 'FOO' + 'BAR'
     $articles = $articleFinder->
-      whereCustom('upper(Article.Title) = ? + ?', array('foo', 'bar'))->
+      whereCustom('upper(Article.Title) = ? + ?', array('FOO', 'BAR'))->
       find();
     // When there is more than one parameter, use an array as second argument
 
-    // Finding all Articles where PublishedAt is null AND upper(title) = 'foo'
+    // Finding all Articles where PublishedAt is null AND upper(title) = 'FOO'
     $articles = $articleFinder->
       where('PublishedAt', 'is null', null)->
-      whereCustom('upper(Article.Title) = ?', 'foo')->
+      whereCustom('upper(Article.Title) = ?', 'FOO')->
       find();
     // whereCustom() adds a condition with 'AND'
-    // Finding all Articles where PublishedAt is null OR upper(title) = 'foo'
+    // Finding all Articles where PublishedAt is null OR upper(title) = 'FOO'
     $articles = $articleFinder->
       where('PublishedAt', 'is null', null)->
-      orWhereCustom('upper(Article.Title) = ?', 'foo')->
+      orWhereCustom('upper(Article.Title) = ?', 'FOO')->
       find();
     // orWhereCustom() adds a condition with 'OR'
     
