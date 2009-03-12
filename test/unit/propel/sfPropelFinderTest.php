@@ -40,7 +40,7 @@ include dirname(__FILE__).'/../../bootstrap.php';
 CommentPeer::doDeleteAll();
 ArticlePeer::doDeleteAll();
 
-$t = new lime_test(147, new lime_output_color());
+$t = new lime_test(145, new lime_output_color());
 
 $t->diag('find()');
 
@@ -373,10 +373,6 @@ $article = sfPropelFinder::from('Article')->where('Article.Title', 'abc')->findO
 $t->is($article->getId(), $article1->getId(), 'where() accepts a complete column name ClassName.ColumnName');
 $article = sfPropelFinder::from('Article')->where('Article_Title', 'abc')->findOne();
 $t->is($article->getId(), $article1->getId(), 'where() accepts a complete column name ClassName_ColumnName');
-$article = sfPropelFinder::from('Article')->where('a.Title', 'abc')->findOne();
-$t->is($article->getId(), $article1->getId(), 'where() accepts a complete column name ClassShortcut.ColumnName');
-$article = sfPropelFinder::from('Article b')->where('b.Title', 'abc')->findOne();
-$t->is($article->getId(), $article1->getId(), 'where() accepts a complete column name ClassAlias.ColumnName');
 $article = sfPropelFinder::from('Article')->where('Title', 'def')->findOne();
 $t->is($article->getId(), $article2->getId(), 'where() adds a WHERE condition on the column given as first argument');
 $articles = sfPropelFinder::from('Article')->where('Title', Criteria::LIKE, '%bc')->find();

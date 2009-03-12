@@ -76,6 +76,18 @@ class sfPropelFinderUtils
     return self::$classes[$peerClass];
   }
   
+  
+  public static function getColNameUsingAlias($alias, $phpName, $class, $withPeerClass = false)
+  {
+    // Step 1 : replace alias with regular name
+    $peerClass = self::getPeerClassFromClass($class);
+    // Step 2 : Transform the PhpName to a Colname
+    $column = call_user_func(array($peerClass, 'translateFieldName'), ucfirst($phpName), BasePeer::TYPE_PHPNAME, BasePeer::TYPE_COLNAME);
+    // Step 3 : replace the table name with the alias again
+    $column = call_user_func(array($peerClass, 'alias'), $alias, $column);
+    return $withPeerClass ? array($peerClass, $column) : $column;
+  }
+  
   public static function getColumnsForPeerClass($peerClass)
   {
     if(class_exists($peerClass))

@@ -16,13 +16,13 @@ class sfPropelFinder extends sfModelFinder
     $alias           = null,
     $peerClass       = null,
     $object          = null,
-    $databaseMap     = null,
     $connection      = null,
     $criteria        = null,
     $reinit          = true,
     $latestQuery     = '',
     $criterions      = array(),
     $namedCriterions = array(),
+    $relations       = null,
     $withClasses     = array(),
     $withColumns     = array(),
     $culture         = null,
@@ -39,7 +39,6 @@ class sfPropelFinder extends sfModelFinder
     $this->alias = $alias;
     $this->object = new $class();
     $this->peerClass = get_class($this->object->getPeer());
-    $this->addRelation($this->peerClass, $this->alias);
     $this->initialize();
     
     return $this;
@@ -224,15 +223,6 @@ class sfPropelFinder extends sfModelFinder
   public function initialize()
   {
     $this->reinitCriteria();
-    $mapBuilder = call_user_func(array($this->peerClass, 'getMapBuilder'));
-    $mapBuilder->doBuild();
-    $this->databaseMap = $mapBuilder->getDatabaseMap();
-  }
-  
-  protected function addRelation($peerClass, $alias = '')
-  {
-    if(!$alias) list($class, $alias) = $this->getClassAndAlias($peerClass);
-    $this->relations[$alias] = $peerClass;
   }
   
   public function getCriteria()
@@ -632,8 +622,7 @@ class sfPropelFinder extends sfModelFinder
       $this->reinitCriteria();
       $this->reinitWithClasses();
       $this->reinitWithColumns();
-      $this->relations = array();
-      $this->addRelation($this->peerClass, $this->alias);
+      $this->relations = null;
     }
     $this->updateLatestQuery();
     
@@ -804,17 +793,20 @@ class sfPropelFinder extends sfModelFinder
   {
     foreach ($this->getWithClasses() as $className)
     {
-      if(!in_array(sfPropelFinderUtils::getPeerClassFromClass($className), $this->relations))
+      if(!$this->hasRelation($className))
       {
         $this->join($className);
       }
     }
     foreach($this->getWithColumns() as $alias => $column)
     {
-      $peerClass = $column['peerClass'];
-      if($peerClass && !in_array($peerClass, $this->relations))
+      if($peerClass = $column['peerClass'])
       {
-        $this->join(sfPropelFinderUtils::getClassFromPeerClass($peerClass));
+        $class = sfPropelFinderUtils::getClassFromPeerClass($peerClass);
+        if($class && !$this->hasRelation($class))
+        {
+          $this->join($class);
+        }
       }
     }
     
@@ -1424,46 +1416,57 @@ class sfPropelFinder extends sfModelFinder
       case 2:
         // $articleFinder->join('Comment')
         // $articleFinder->join('Category', 'RIGHT JOIN')
-        list($relatedClass, $alias) = $this->getClassAndAlias($args[0]);
-        list($column1, $column2) = $this->getRelation($relatedClass);
-        $relatedPeerClass = sfPropelFinderUtils::getPeerClassFromClass($relatedClass);
-        if($this->hasRelation($relatedPeerClass))
+        list($class, $alias) = $this->getClassAndAlias($args[0]);
+        $relation = $this->getRelations()->addRelationFromClass($class, $alias);
+        if(!$relation)
         {
           // There is already a relation on this table, so skip the join
           return $this;
         }
-        $this->addRelation($relatedPeerClass, $alias);
+        if($class != $alias)
+        {
+          $table = constant(sfPropelFinderUtils::getPeerClassFromClass($class).'::TABLE_NAME');
+          $this->criteria->addAlias($alias, $table);
+        }
         $operator = isset($args[1]) ? $args[1] : Criteria::INNER_JOIN;
         break;
       case 3:
         // $articleFinder->join('Article.CategoryId', 'Category.Id', 'RIGHT JOIN')
         list($column1, $column2, $operator) = $args;
         list($peerClass1, $column1) = $this->getColName($column1, $peerClass = null, $withPeerClass = true, $autoAddJoin = false);
-        if($peerClass1 != $this->peerClass && !$this->hasRelation($peerClass1))
-        {
-          list($peerClass1, $alias) = $this->getClassAndAlias($peerClass1);
-          if($this->hasRelation($peerClass1))
-          {
-            // There is already a relation on this table, so skip the join
-            return $this;
-          }
-          $this->addRelation($peerClass1, $alias);
-        }
+        $class1 = sfPropelFinderUtils::getClassFromPeerClass($peerClass1);
         list($peerClass2, $column2) = $this->getColName($column2, $peerClass = null, $withPeerClass = true, $autoAddJoin = false);
-        if($peerClass2 != $this->peerClass && !$this->hasRelation($peerClass2))
+        $class2 = sfPropelFinderUtils::getClassFromPeerClass($peerClass2);
+        $relation = $this->getRelations()->addRelationFromColumns($class1, $column1, $class2, $column2);
+        if(!$relation)
         {
-          list($peerClass2, $alias) = $this->getClassAndAlias($peerClass2);
-          if($this->hasRelation($peerClass2))
-          {
-            // There is already a relation on this table, so skip the join
-            return $this;
-          }
-          $this->addRelation($peerClass2, $alias);
+          // There is already a relation on this table, so skip the join
+          return $this;
         }
         break;
+      case 4:
+        // $articleFinder->join('Category cat', 'Article.CategoryId', 'cat.Id', 'RIGHT JOIN')
+        list($classAndAlias, $column1, $column2, $operator) = $args;
+        list($peerClass1, $column1) = $this->getColName($column1, $peerClass = null, $withPeerClass = true, $autoAddJoin = false);
+        $class1 = sfPropelFinderUtils::getClassFromPeerClass($peerClass1);
+        list($class2, $alias) = $this->getClassAndAlias($classAndAlias);
+        list($alias2, $phpName2) = explode('.', $column2);
+        if($alias != $alias2)
+        {
+          throw new Exception('The second join member must be a column of the aliased table');
+        }
+        list($peerClass2, $column2) = sfPropelFinderUtils::getColNameUsingAlias($alias2, $phpName2, $class2, true);
+        $table = constant($peerClass2.'::TABLE_NAME');
+        $relation = $this->getRelations()->addRelationFromColumns($class1, $column1, $class2, $column2, $alias);
+        if(!$relation)
+        {
+          // There is already a relation on this table, so skip the join
+          return $this;
+        }
+        $this->criteria->addAlias($alias, $table);
     }
     $operator = trim(str_replace('JOIN', '', strtoupper($operator))) . ' JOIN';
-    $this->criteria->addJoin($column1, $column2, $operator);
+    $this->criteria->addJoin($relation->getFromColumn(), $relation->getToColumn(), $operator);
     
     return $this;
   }
@@ -1484,75 +1487,18 @@ class sfPropelFinder extends sfModelFinder
     return $this;
   }
   
-  protected function hasRelation($peerName)
+  protected function getRelations()
   {
-    return in_array($peerName, $this->relations);
+    if(is_null($this->relations))
+    {
+      $this->relations = new sfPropelFinderRelationManager($this->class);
+    }
+    return $this->relations;
   }
   
-  /**
-   * Guess the relation to another class
-   *
-   * @param string $phpName Propel Class name (e.g. 'Article')
-   * 
-   * @return array A list with the two columns member of the relationship
-   */
-  public function getRelation($phpName)
+  protected function hasRelation($alias)
   {
-    foreach($this->relations as $peerClass)
-    {
-      // try to find many to one or one to one relationship
-      if($relation = $this->findRelation($phpName, $peerClass))
-      {
-        return $relation;
-      }
-      // try to find one to many relationship
-      if($relation = $this->findRelation(
-        sfPropelFinderUtils::getClassFromPeerClass($peerClass),
-        sfPropelFinderUtils::getPeerClassFromClass($phpName)))
-      {
-        return array_reverse($relation);
-      }
-    }
-    throw new Exception(sprintf('sfPropelFinder: %s has no %s related table', $this->peerClass, $phpName));
-  }
-  
-  /**
-   * Finds a relation between two classes by introspection
-   */
-  protected function findRelation($phpName, $peerClass)
-  {
-    foreach (sfPropelFinderUtils::getColumnsForPeerClass($peerClass) as $c)
-    {
-      if ($c->isForeignKey())
-      {
-        if(!$this->databaseMap->containsTable($c->getRelatedTableName()))
-        {
-          $mapBuilder = call_user_func(array(sfPropelFinderUtils::getPeerClassFromClass($phpName), 'getMapBuilder')); 
-          $mapBuilder->doBuild();
-        }
-        try
-        {
-          $tableMap = $this->databaseMap->getTable($c->getRelatedTableName());
-        }
-        catch (PropelException $e)
-        {
-          // so $c->getRelatedTable() is not in the database map
-          // even though the $phpName table map has been initialized
-          // we are obviously looking for the wrong table here
-          continue;
-        }
-        if($tableMap->getPhpName() == $phpName)
-        {
-          return array(
-            constant($peerClass.'::'.$c->getColumnName()),
-            $c->getRelatedName()
-          );
-        }
-
-      }
-    }
-    
-    return false;
+    return $this->getRelations()->hasRelation($alias);
   }
   
   /**
@@ -1678,7 +1624,7 @@ class sfPropelFinder extends sfModelFinder
     }
     else
     {
-      $alias = strtolower(substr($class, 0, 1));
+      $alias = $class;
       while(isset($this->relations[$alias]))
       {
         $alias .= '1';
@@ -1697,9 +1643,20 @@ class sfPropelFinder extends sfModelFinder
     {
       // Table.Column
       list($class, $phpName) = explode('.', $phpName);
-      if(array_key_exists($class, $this->relations))
+      if($this->hasRelation($class))
       {
-        $peerClass = $this->relations[$class];
+        $relation = $this->relations[$class];
+        $toClass = $relation->getToClass();
+        if ($toClass == $class)
+        {
+          // Relation with no alias
+          $peerClass = sfPropelFinderUtils::getPeerClassFromClass($relation->getToClass());
+        }
+        else
+        {
+          // Relation with an alias
+          return sfPropelFinderUtils::getColNameUsingAlias($class, $phpName, $toClass, $withPeerClass);
+        }
       }
       else
       {
@@ -1719,7 +1676,7 @@ class sfPropelFinder extends sfModelFinder
       // Column
       $peerClass = $this->peerClass;
     }
-    if($peerClass != $this->peerClass && !$this->hasRelation($peerClass) && $autoAddJoin)
+    if($peerClass != $this->peerClass && !$this->hasRelation($class) && $autoAddJoin)
     { 
       $this->join($class);
     }

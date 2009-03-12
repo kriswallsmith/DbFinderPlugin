@@ -39,7 +39,7 @@ include dirname(__FILE__).'/../../bootstrap.php';
 // cleanup database
 ArticlePeer::doDeleteAll();
 
-$t = new lime_test(7, new lime_output_color());
+$t = new lime_test(5, new lime_output_color());
 
 $t->diag('getColName()');
 
@@ -56,7 +56,3 @@ $t->is($finder->getColName('Article_Title'), 'article.TITLE', 'getColName() reco
 $t->is($finder->getColName('Article.Title'), 'article.TITLE', 'getColName() recognizes [table phpName].[column phpName]');
 $t->is($finder->getColName('Article.CategoryId'), 'article.CATEGORY_ID', 'getColName() expects column names in CamelCase');
 $t->is($finder->getColName('Article.categoryId'), 'article.CATEGORY_ID', 'getColName() is tolerant over the first letter capitalization');
-$t->is($finder->getColName('a.Title'), 'article.TITLE', 'getColName() recognizes [table alias].[column phpName]');
-
-$finder = new myFinder('Article b');
-$t->is($finder->getColName('b.Title'), 'article.TITLE', 'getColName() recognizes [table alias].[column phpName]');

@@ -244,15 +244,17 @@ Compare it to the code required to get these `Comment` objects without `DbFinder
       where('Comment.Content', 'You rock!')->
       findOne();
 
-    // So join() is mostly useful if you want a special type of join (left, right)
+    // Using an explicit join is mostly useful if you want a special type of join
+    // Use leftJoin(), and rightJoin() for this purpose
+    // innerJoin() is a synonym for join()
     $article = DbFinder::from('Article')->
       leftJoin('Comment')->
       where('Comment.Content', 'You rock!')->
       findOne();
 
-    // Or if you need to specify the members of the join and the type of join
+    // Using an explicit join can also help if you need to specify the members of the join
     $article = DbFinder::from('Article')->
-      join('Article.Id', 'Comment.ArticleId', 'inner join')->
+      leftJoin('Article.Id', 'Comment.ArticleId')->
       where('Comment.Content', 'You rock!')->
       findOne();
 
@@ -280,7 +282,27 @@ Compare it to the code required to get these `Comment` objects without `DbFinder
       join('Comment')->
       where('Author.Name', 'John')->
       findOne();
-
+    
+    // join() supports table aliases
+    $article = DbFinder::from('Article')->
+      join('Comment c')->
+      where('c.Content', 'You rock!')->
+      findOne();
+    
+    // Table aliases are mostly useful to join the current table
+    $children = DbFinder::from('Person')->
+      innerJoin('Person father', 'Person.FatherId', 'father.Id')->
+      where('father.Name', 'Daddy!')->
+      find();
+    
+    // Table aliases also allow to handle multiple foreign keys on the same column
+    $house = DbFinder::from('House')->
+      innerJoin('Person owner', 'House.OwnerId', 'owner.Id')->
+      where('owner.Name', 'Mr Doe')->
+      innerJoin('Person renter', 'House.RenterId', 'renter.Id')->
+      where('renter.Name', 'Mr Black')->
+      find();
+    
     // You can also use the magic joinXXX() method
     $article = DbFinder::from('Article')->
       joinComment()->
@@ -681,8 +703,7 @@ TODO / Ideas
 * Add a method returning a description of the conditions
 * Add support for `withColumn()` in array/text output methods
 * Bypass hydration in array/text output methods
-* Handle self-referencing relationships (e.g. parent_id), especially in with()
-* Handle multiple references to the same table (c.f. getFooRelatedByBarId())
+* Handle relation aliases in with()
 * Implement iterator interface? That way, the query is only executed upon a foreach or an array access... And the finder can be seen as a collection
 * Column finder, which provides an easy interface to Creole (and PDO) for retrieval of columns instead of objects?
 * Allow `related_to()` to look for relations in joined classes if not found previously in main class
@@ -690,8 +711,12 @@ TODO / Ideas
 Changelog
 ---------
 
-### 2009-03-03 | Trunk
+### 2009-03-12 | Trunk
 
+* francois: Added support for aliases in `sfPropelFinder::join()`
+* francois: Added a gazillon tests for Propel joins
+* francois: Added support for self-referenced foreign keys and multiple foreign keys to the same table in `sfPropelFinder::join()`
+* francois: Refactored relations discovery and storage
 * francois: Added `_else()` and `_elseif()` methods
 * francois: Added `whereCustom()` and `orWhereCustom()` in both adapters
 * francois: Fixed a bug in sfDoctrineFinder when using named conditions with a null value (patch from Maksymus007)

@@ -98,6 +98,8 @@
           <file name="sfPropelFinderCache.php" role="data"/>
           <file name="sfPropelFinderColumn.php" role="data"/>
           <file name="sfPropelFinderPager.php" role="data"/>
+          <file name="sfPropelFinderRelation.php" role="data"/>
+          <file name="sfPropelFinderRelationManager.php" role="data"/>
           <file name="sfPropelFinderUtils.php" role="data"/>
         </dir>
       </dir>
