@@ -73,73 +73,73 @@ Usage
 ### Adding WHERE clause
 
     [php]
-    $articleFinder = DbFinder::from('Article');
     // Finding all Articles where title = 'foo'
-    $articles = $articleFinder->
+    $articles = DbFinder::from('Article')->
       where('Title', 'foo')->
       find();
     // Finding all Articles where title like 'foo%'
-    $articles = $articleFinder->
+    $articles = DbFinder::from('Article')->
       where('Title', 'like', 'foo%')->
       find();
     // Finding all Articles where published_at less than time()
-    $articles = $articleFinder->
+    $articles = DbFinder::from('Article')->
       where('PublishedAt', '<', time())->
       find();
     // Finding all Articles with no category
-    $articles = $articleFinder->
+    $articles = DbFinder::from('Article')->
       where('CategoryId', 'is not null', null)->
       find();
 
     // You can chain WHERE clauses
-    $articles = $articleFinder->
+    $articles = DbFinder::from('Article')->
       where('Title', 'foo')->
       where('PublishedAt', '<', time())->
       find();
     // For OR conditions, use orWhere() instead of where()
-    $articles = $articleFinder->
+    $articles = DbFinder::from('Article')->
       where('Title', 'foo')->
       where('PublishedAt', '<', time())->
       orWhere('Title', 'like', 'bar%')->
       find();
     
     // The where() method accepts simple or composed column names ('ClassName.ColumnName')
-    $articles = $articleFinder->
+    $articles = DbFinder::from('Article')->
       where('Article.Title', 'foo')->
       find();
     // You can also use the magic whereXXX() method, removing the column argument and concatenating it to the method name
-    $articles = $articleFinder->
+    $articles = DbFinder::from('Article')->
       whereTitle('foo')->
       find();
+      
     // Or, when your search is on a single column, use the magic findByXXX() method
-    $articles = $articleFinder->findByTitle('foo');
+    $articles = DbFinder::from('Article')->findByTitle('foo');
 
 ### Using functions in a WHERE clause
 
     [php]
     // When you need to apply a function, use whereCustom() instead of where()
-    $articleFinder = DbFinder::from('Article');
     // Finding all Articles for a given month
-    $articles = $articleFinder->
+    $articles = DbFinder::from('Article')->
       whereCustom('date_format(Article.Title, \'%%y%%m\') = ?', $month)->
       find();
     // Notice that you must use the composed column name and the comparison operator
     // The finder will escape the $month parameter, so there is no risk of SQL injection
 
     // Finding all Articles where upper(title) = 'FOO' + 'BAR'
-    $articles = $articleFinder->
+    $articles = DbFinder::from('Article')->
       whereCustom('upper(Article.Title) = ? + ?', array('FOO', 'BAR'))->
       find();
     // When there is more than one parameter, use an array as second argument
 
     // Finding all Articles where PublishedAt is null AND upper(title) = 'FOO'
-    $articles = $articleFinder->
+    $articles = DbFinder::from('Article')->
       where('PublishedAt', 'is null', null)->
       whereCustom('upper(Article.Title) = ?', 'FOO')->
       find();
     // whereCustom() adds a condition with 'AND'
+    
     // Finding all Articles where PublishedAt is null OR upper(title) = 'FOO'
-    $articles = $articleFinder->
+    $articles = DbFinder::from('Article')->
       where('PublishedAt', 'is null', null)->
       orWhereCustom('upper(Article.Title) = ?', 'FOO')->
       find();
@@ -148,17 +148,16 @@ Usage
 ### Ordering results
 
     [php]
-    $articleFinder = DbFinder::from('Article');
     // Finding all Articles ordered by created_at (ascending order by default)
-    $articles = $articleFinder->
+    $articles = DbFinder::from('Article')->
       orderBy('CreatedAt')->
       find();
     // Finding all Articles ordered by created_at desc
-    $articles = $articleFinder->
+    $articles = DbFinder::from('Article')->
       orderBy('CreatedAt', 'desc')->
       find();
     // You can also use the magic orderByXXX() method
-    $articles = $articleFinder->
+    $articles = DbFinder::from('Article')->
       orderByCreatedAt()->
       find();
 
@@ -167,7 +166,7 @@ Usage
 The methods of the `DbFinder` object return the current finder object, so you can chain them together in a single call, and finish by any of the `find()` methods to launch the query.
 
     [php]
-    // everything chained together
+    // Everything chained together
     $articles = DbFinder::from('Article')->where('Title', 'like', '%world')->where('IsPublished', true)->orderBy('CreatedAt')->find();
     // You can write it in several lines, too
     $articles = DbFinder::from('Article')->
@@ -184,12 +183,11 @@ The syntax should remind you of `sfFinder` and `sfTestBrowser`.
     // Propel way
     $comments = $article->getComments();
     // DbFinder way
-    $commentFinder = DbFinder::from('Comment');
-    $comments = $commentFinder->
+    $comments = DbFinder::from('Comment')->
       where('ArticleId', $article->getId())->
       find();
     // Or let the finder guess local and foreign columns based on the schema
-    $comments = $commentFinder->
+    $comments = DbFinder::from('Comment')->
       relatedTo($article)->
       find();
 
@@ -197,12 +195,12 @@ Since the finder way is longer than the native Propel way, what is the interest 
 
     [php]
     // Retrieving the related comments, orderd by date
-    $comments = $commentFinder->
+    $comments = DbFinder::from('Comment')->
       relatedTo($article)->
       orderBy('CreatedAt', 'desc')->
       find();
     // Retrieving the last one of the related comments
-    $comments = $commentFinder->
+    $comments = DbFinder::from('Comment')->
       relatedTo($article)->
       findLast();
 
@@ -283,11 +281,31 @@ Compare it to the code required to get these `Comment` objects without `DbFinder
       where('Author.Name', 'John')->
       findOne();
     
-    // join() supports table aliases
+    // You can also use the magic joinXXX() method
+    $article = DbFinder::from('Article')->
+      joinComment()->
+      where('Author.Name', 'John')->
+      findOne();
+    
+### Table aliases
+
+    [php]
+    // from() allows you to define table aliases
+    $articles = DbFinder::from('Article a')->
+      where('a.Title', 'foo')->
+      find();
+    
+    // join() also allows table aliases
     $article = DbFinder::from('Article')->
       join('Comment c')->
       where('c.Content', 'You rock!')->
       findOne();
+    
+    // Table aliases can be used in all finder methods (where, groupBy, orderBy, etc.)
+    $comments = DbFinder::from('Comment')->
+      join('Article a')->
+      orderBy('a.Title')->
+      find();
     
     // Table aliases are mostly useful to join the current table
     $children = DbFinder::from('Person')->
@@ -303,12 +321,6 @@ Compare it to the code required to get these `Comment` objects without `DbFinder
       where('renter.Name', 'Mr Black')->
       find();
     
-    // You can also use the magic joinXXX() method
-    $article = DbFinder::from('Article')->
-      joinComment()->
-      where('Author.Name', 'John')->
-      findOne();
-
 ### Complex logic
 
     [php]
@@ -401,6 +413,15 @@ The power of the `with()` method is that it can guess relationships just as well
       echo $comment->getArticle()->getCategory()->getName();  // No query needed, the related Article and article Category are already hydrated
     }
 
+When joining a table with an alias, use the alias name in `with()` to hydrate the correct object.
+
+    [php]
+    $persons = DbFinder::from('Person')->
+      innerJoin('Person father', 'Person.FatherId', 'father.Id')->
+      with('father')->
+      findOne();
+    echo $person->getPersonRelatedByFatherId()->getName(); // No query needed
+    
 The `with()` method can also hydrate the related I18n objects, thus providing an equivalent to symfony's `doSelectWithI18n()` methods.
 
     [php]
@@ -711,8 +732,9 @@ TODO / Ideas
 Changelog
 ---------
 
-### 2009-03-12 | Trunk
+### 2009-03-13 | Trunk
 
+* francois: Added support for aliases in `sfPropelFinder::with()`
 * francois: Added support for aliases in `sfPropelFinder::join()`
 * francois: Added a gazillon tests for Propel joins
 * francois: Added support for self-referenced foreign keys and multiple foreign keys to the same table in `sfPropelFinder::join()`

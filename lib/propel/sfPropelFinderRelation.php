@@ -10,8 +10,11 @@ class sfPropelFinderRelation
     $toClass,
     $fromColumn,
     $toColumn,
+    $alias,
     $type,
-    $toAddMethod;
+    $previousRelation,
+    $getPreviousMethod,
+    $addToMethod;
   
   const
     ONE_TO_MANY = false,
@@ -61,24 +64,106 @@ class sfPropelFinderRelation
     return $this->toColumn = $value;
   }
   
+  public function isAlias()
+  {
+    return !is_null($this->alias);
+  }
+  
+  public function getAlias()
+  {
+    return $this->alias;
+  }
+
+  public function setAlias($alias)
+  {
+    $this->alias = $alias;
+  }
+  
   public function getType()
   {
     return $this->type;
   }
   
-  public function addObject($fromObject, $toObject, $isNew = false)
+  public function getPreviousRelation()
   {
-    if(is_null($this->toAddMethod))
+    return $this->previousRelation;
+  }
+  
+  public function setPreviousRelation(sfPropelFinderRelation $rel)
+  {
+    $this->previousRelation = $rel;
+  }
+  
+  public function getRealFromClass()
+  {
+    if(is_null($this->previousRelation))
     {
-      $methodName1 = 'add' . $this->toClass;
-      $methodName2 = $method1 . 'relatedBy' . self::camelize($this->toColumn);
-      if(method_exists($fromClass, $methodName2))
+      return $this->getFromClass();
+    }
+    else
+    {
+      return $this->getPreviousRelation()->getToClass();
+    }
+  }
+  
+  public function getFromColumnPhpName()
+  {
+    $peerClass = sfPropelFinderUtils::getPeerClassFromClass($this->getRealFromClass());
+    return call_user_func(array($peerClass, 'translateFieldName'), $this->getFromColumn(), BasePeer::TYPE_COLNAME, BasePeer::TYPE_PHPNAME);
+  }
+  
+  public function getObjectToRelate($baseObject)
+  {
+    if(is_null($this->previousRelation))
+    {
+      return $baseObject;
+    }
+    else
+    {
+      $previousRelation = $this->getPreviousRelation();
+      $baseObject = $previousRelation->getObjectToRelate($baseObject);
+      if (is_null($this->getPreviousMethod))
       {
-        $this->toAddMethod = $methodName2;
+        $method = 'get' . $previousRelation->getToClass();
+        $columnName = $previousRelation->getFromColumnPhpName();
+        $preciseMethod = $method . 'RelatedBy' . $columnName;
+        if(method_exists($baseObject, $preciseMethod))
+        {
+          $this->getPreviousMethod = $preciseMethod;
+        }
+        elseif(method_exists($baseObject, $method))
+        {
+          $this->getPreviousMethod = $method;
+        }
+        else
+        {
+          throw new Exception('Unable to find foreign key getter method');
+        }
       }
-      elseif(method_exists($fromClass, $methodName1))
+      
+      $objectToRelate = call_user_func(array($baseObject, $this->getPreviousMethod));
+      return $objectToRelate;
+    }
+  }
+  
+  public function relateObject($baseObject, $objectToRelate, $isNew = true)
+  {
+    $baseObject = $this->getObjectToRelate($baseObject);
+    
+    if(is_null($this->addToMethod))
+    {
+      $method = 'add' . $this->getRealFromClass();
+      $columnName = $this->getFromColumnPhpName();
+      $preciseMethod = $method . 'RelatedBy' . $columnName;
+      if(method_exists($objectToRelate, $preciseMethod))
       {
-        $this->toAddMethod = $methodName1;
+        $this->addToMethod = $preciseMethod;
+        $this->initMethod = 'init' . $this->getRealFromClass() . 'sRelatedBy' . $columnName;
+      }
+      elseif(method_exists($objectToRelate, $method))
+      {
+        $this->addToMethod = $method;
+        $this->initMethod = 'init' . $this->getRealFromClass() . 's';
       }
       else
       {
@@ -87,14 +172,24 @@ class sfPropelFinderRelation
     }
     if($isNew)
     {
-      call_user_func(array($toObject, 'init'.$this->fromClass.'s'));
+      call_user_func(array($objectToRelate, $this->initMethod));
     }
-    call_user_func(array($toObject, $methodName), $fromObject);
+    call_user_func(array($objectToRelate, $this->addToMethod), $baseObject);
   }
   
-  protected static function camelize($phpName)
+  public function addSelectColumns($c)
   {
-    return sfModelFinder::camelize(strtolower($phpName));
+    $peerClass = sfPropelFinderUtils::getPeerClassFromClass($this->getToClass());
+    foreach(call_user_func(array($peerClass, 'getFieldNames'), BasePeer::TYPE_COLNAME) as $column)
+    {
+      if ($this->isAlias())
+      {
+        $column = call_user_func(array($peerClass, 'alias'), $this->getAlias(), $column);
+      }
+      $c->addSelectColumn($column);
+    }
+    
+    return $c;
   }
   
   public function reverse()

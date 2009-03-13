@@ -687,8 +687,10 @@ class sfPropelFinder extends sfModelFinder
         }
         // Then the related classes added by way of 'with'
         $objectsInJoin = array($obj);
-        foreach ($this->getWithClasses() as $className)
+        foreach ($this->getWithClasses() as $relationName)
         {
+          $relation = $this->relations[$relationName];
+          $className = $relation->getToClass();
           $withObj = new $className();
           if($propelVersion == '1.2')
           {
@@ -737,7 +739,7 @@ class sfPropelFinder extends sfModelFinder
           }
           else
           {
-            sfPropelFinderUtils::relateObjects($withObj, $objectsInJoin, $isNewObject);
+            $relation->relateObject($obj, $withObj);
           }
           $objectsInJoin []= $withObj;
           if ($isNewObject)
@@ -821,14 +823,14 @@ class sfPropelFinder extends sfModelFinder
     $criteria = $this->buildCriteria();
     $c = clone $criteria;
     $c->clearSelectColumns();
-    // First come the columns of the main class
+    // Step 1: Add the columns of the main class
     call_user_func(array($this->peerClass, 'addSelectColumns'), $c);
-    // Then the related classes added by way of 'with'
+    // Step 2: Add the columns of the related classes added by way of 'with'
     foreach ($this->getWithClasses() as $className)
     {
-      call_user_func(array(sfPropelFinderUtils::getPeerClassFromClass($className), 'addSelectColumns'), $c);
+      $this->relations[$className]->addSelectColumns($c); 
     }
-    // Then the columns added one by one by way of 'withColumn'
+    // Step 3: Add the columns added one by one by way of 'withColumn'
     foreach($this->getWithColumns() as $alias => $column)
     {
       if(strpos($alias, '.') !== false)

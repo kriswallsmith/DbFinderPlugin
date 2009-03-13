@@ -65,7 +65,7 @@ Beware that the tables for these models will be emptied by the tests, so use a t
 
 include dirname(__FILE__).'/../../bootstrap.php';
 
-$t = new lime_test(91, new lime_output_color());
+$t = new lime_test(93, new lime_output_color());
 
 /********************************/
 /* sfPropelFinder::join($class) */
@@ -628,5 +628,26 @@ $finder = sfPropelFinder::from('Human')->
   where('father.Name', 'John')->
   where('mother.Name', 'Jane');
 $nbHumans = $finder->count();
-$t->is($nbHumans, 1, 'join() allows to join to the current table with several forign keys using an alias');
+$t->is($nbHumans, 1, 'join() allows to join to the current table with several foreign keys using an alias');
 $t->is($finder->getLatestQuery(), 'SELECT COUNT(human.ID) FROM human INNER JOIN human father ON (human.FATHER_ID=father.ID) INNER JOIN human mother ON (human.MOTHER_ID=mother.ID) WHERE (father.NAME=\'John\' AND mother.NAME=\'Jane\')', 'join() uses aliased table names when using an alias relation');
+
+HumanPeer::doDeleteAll();
+$human1 = new Human();
+$human1->setName('John');
+$human1->save();
+$human2 = new Human();
+$human2->setName('Albert');
+$human2->setHumanRelatedByFatherId($human1);
+$human2->save();
+$human3 = new Human();
+$human3->setName('Jane');
+$human3->setHumanRelatedByFatherId($human2);
+$human3->save();
+
+$finder = sfPropelFinder::from('Human')->
+  join('Human father', 'Human.FatherId', 'father.Id', 'INNER JOIN')->
+  join('Human grandfather', 'father.FatherId', 'grandfather.Id', 'INNER JOIN')->
+  where('grandfather.Name', 'John');
+$nbHumans = $finder->count();
+$t->is($nbHumans, 1, 'join() allows to join to the current table with several foreign keys using an alias');
+$t->is($finder->getLatestQuery(), 'SELECT COUNT(human.ID) FROM human INNER JOIN human father ON (human.FATHER_ID=father.ID) INNER JOIN human grandfather ON (father.FATHER_ID=grandfather.ID) WHERE grandfather.NAME=\'John\'', 'join() uses aliased table names when using an alias relation');

@@ -58,11 +58,8 @@ class sfPropelFinderRelationManager implements ArrayAccess
   
   public function addRelationFromClass($class, $alias = null)
   {
-    if (is_null($alias))
-    {
-      $alias = $class;
-    }
-    if($this->hasRelation($alias))
+    $relationName = is_null($alias) ? $class : $alias;
+    if($this->hasRelation($relationName))
     {
       // There is already a relation on this table, so skip the join
       return false;
@@ -82,19 +79,20 @@ class sfPropelFinderRelationManager implements ArrayAccess
           $peerClass = sfPropelFinderUtils::getPeerClassFromClass($relation->getToClass());
           $relation->setToColumn(call_user_func(array($peerClass, 'alias'), $alias, $relation->getToColumn()));
         }
+        if(!is_null($alias))
+        {
+          $relation->setAlias($alias);
+        }
       }
-      $this->relations[$alias] = $relation;
+      $this->relations[$relationName] = $relation;
       return $relation;
     }
   }
   
   public function addRelationFromColumns($fromClass, $fromColumn, $toClass, $toColumn, $alias = null)
   {
-    if(is_null($alias))
-    {
-      $alias = $toClass;
-    }
-    if($this->hasRelation($alias))
+    $relationName = is_null($alias) ? $toClass : $alias;
+    if($this->hasRelation($relationName))
     {
       // There is already a relation on this table, so skip the join
       return false;
@@ -102,7 +100,17 @@ class sfPropelFinderRelationManager implements ArrayAccess
     else
     {
       $relation = new sfPropelFinderRelation($fromClass, $fromColumn, $toClass, $toColumn);
-      $this->relations[$alias] = $relation;
+      // Is it an direct relation?
+      if($this->hasRelation($relation->getFromClass()))
+      {
+        $relation->setPreviousRelation($this->relations[$relation->getFromClass()]);
+      }
+      // Is there a true alias for this relation?
+      if (!is_null($alias))
+      {
+        $relation->setAlias($alias);
+      }
+      $this->relations[$relationName] = $relation;
       return $relation;
     }
   }
@@ -133,11 +141,14 @@ class sfPropelFinderRelationManager implements ArrayAccess
       // try to find many to one or one to one relationship
       if($relation = $this->findRelation($phpName, $rel->getToClass()))
       {
-        return $relation->reverse();
+        $relation = $relation->reverse();
+        $relation->setPreviousRelation($rel);
+        return $relation;
       }
       // try to find one to many relationship
       if($relation = $this->findRelation($rel->getToClass(), $phpName))
       {
+        $relation->setPreviousRelation($rel);
         return $relation;
       }
     }

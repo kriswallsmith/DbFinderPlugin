@@ -15,24 +15,6 @@ class sfPropelFinderUtils
     $peerClasses = array(),
     $classes = array();
   
-  public static function relateObjects($new, $existingObjects, $isNew)
-  {
-    // brute force (to be optimized later)
-    foreach ($existingObjects as $existingObject)
-    {
-      $methodName = 'add'.get_class($existingObject);
-      if(method_exists($new, $methodName))
-      {
-        if($isNew)
-        {
-          call_user_func(array($new, 'init'.get_class($existingObject).'s'));
-        }
-        call_user_func(array($new, $methodName), $existingObject);
-        break;
-      }
-    }
-  }
-  
   public static function relateI18nObjects($new, $existingObjects, $culture)
   {
     // brute force (to be optimized later)
@@ -76,7 +58,17 @@ class sfPropelFinderUtils
     return self::$classes[$peerClass];
   }
   
-  
+  /**
+   * Return a database-readbale column name using a table alias
+   * Example use:
+   *     echo sfPropelFinderUtils::getColNameUsingAlias('a', 'CategoryId', 'Article');
+   *     => 'a.CATEGORY_ID'
+   *
+   * @param $alias String The table alias to be used
+   * @param $phpName String The column phpName (e.g. 'CategoryId')
+   * @param $class String The model class (e.g. 'Article')
+   * @param $withPeerClass Boolean optional flag to get the peer class together with the column name
+   */
   public static function getColNameUsingAlias($alias, $phpName, $class, $withPeerClass = false)
   {
     // Step 1 : replace alias with regular name

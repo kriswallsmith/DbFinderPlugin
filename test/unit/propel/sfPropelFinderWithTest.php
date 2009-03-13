@@ -47,15 +47,31 @@ And a second model similar to:
         name:        varchar(255)
         foo:         { type: integer, foreignTable: club, foreignReference: id, onDelete: cascade }
         the_sex:     { type: integer, foreignTable: sex, foreignReference: id, onDelete: cascade }
+        
+      human:
+        id:
+        name: varchar(255)
+        father_id: { type: integer, foreignTable: human, foreignReference: id }
+        mother_id: { type: integer, foreignTable: human, foreignReference: id }
+
+      house:
+        id:
+        name: varchar(255)
+        owner_id: { type: integer, foreignTable: human, foreignReference: id }
+        renter_id: { type: integer, foreignTable: human, foreignReference: id }
 
 Beware that the tables for these models will be emptied by the tests, so use a test database connection.
 */
 
 include dirname(__FILE__).'/../../bootstrap.php';
 
-$t = new lime_test(48, new lime_output_color());
+$t = new lime_test(82, new lime_output_color());
 
-$t->diag('with()');
+/**************************/
+/* sfPropelFinder::with() */
+/**************************/
+
+$t->diag('sfPropelFinder::with()');
 
 CommentPeer::doDeleteAll();
 ArticlePeer::doDeleteAll();
@@ -68,22 +84,103 @@ $article1->setTitle('aaaaa');
 $article1->setCategory($category1);
 $article1->save();
 $sql = 'SELECT article.ID, article.TITLE, article.CATEGORY_ID, category.ID, category.NAME FROM article INNER JOIN category ON (article.CATEGORY_ID=category.ID) LIMIT 1';
-$finder = sfPropelFinder::from('Article')->join('Category')->with('Category');
+$finder = sfPropelFinder::from('Article')->
+  join('Category')->
+  with('Category');
 $article = $finder->findOne();
 $t->is($finder->getLatestQuery(), $sql, 'with() gets the columns of the with class in addition to the columns of the current class');
-$article->getCategory();
-$t->is(Propel::getConnection()->getLastExecutedQuery(), $sql, 'with() hydrates the related classes and avoids subsequent queries');
+$t->is($article->getTitle(), 'aaaaa', 'with() does not change the main object hyration');
+$category = $article->getCategory();
+$t->is($category->getName(), 'cat1', 'with() hydrates the related objects');
+$t->is(Propel::getConnection()->getLastExecutedQuery(), $sql, 'with() avoids subsequent queries');
 
-$finder = sfPropelFinder::from('Article')->with('Category');
-$article = $finder->findOne();
-$t->is($finder->getLatestQuery(), $sql, 'with() adds a join if not already added');
-$t->is($article->getTitle(), 'aaaaa', 'fetching objects with a with() returns the correct main object');
-$t->is($article->getCategory()->getName(), 'cat1', 'fetching objects with a with() returns the correct related object');
-$t->is(Propel::getConnection()->getLastExecutedQuery(), $sql, 'with() called without a join() hydrates the related classes and avoids subsequent queries');
+/*******************************************/
+/* sfPropelFinder::with() without a join() */
+/*******************************************/
 
-$finder = sfPropelFinder::from('Article')->leftJoin('Category')->with('Category');
+$t->diag('sfPropelFinder::with() without a join()');
+
+$finder = sfPropelFinder::from('Article')->
+  with('Category');
 $article = $finder->findOne();
-$t->is($finder->getLatestQuery(), 'SELECT article.ID, article.TITLE, article.CATEGORY_ID, category.ID, category.NAME FROM article LEFT JOIN category ON (article.CATEGORY_ID=category.ID) LIMIT 1', 'calling a particular join() before with() changes the join clause');
+$t->is($finder->getLatestQuery(), $sql, 'with() without a join() auto-adds missing joins in the SQL query');
+$t->is($article->getTitle(), 'aaaaa', 'with() without a join() does not change the main object hyration');
+$category = $article->getCategory();
+$t->is($category->getName(), 'cat1', 'with() without a join() hydrates the related objects');
+$t->is(Propel::getConnection()->getLastExecutedQuery(), $sql, 'with() without a join() avoids subsequent queries');
+
+/************************************************/
+/* sfPropelFinder::with() with a special join() */
+/************************************************/
+
+$t->diag('sfPropelFinder::with() with a special join()');
+
+$finder = sfPropelFinder::from('Article')->
+  leftJoin('Category')->
+  with('Category');
+$article = $finder->findOne();
+$sql = 'SELECT article.ID, article.TITLE, article.CATEGORY_ID, category.ID, category.NAME FROM article LEFT JOIN category ON (article.CATEGORY_ID=category.ID) LIMIT 1';
+$t->is($finder->getLatestQuery(), $sql, 'Calling a particular join() before with() changes the join clause');
+$t->is($article->getTitle(), 'aaaaa', 'with() with a special join() does not change the main object hyration');
+$category = $article->getCategory();
+$t->is($category->getName(), 'cat1', 'with() with a special join() hydrates the related objects');
+$t->is(Propel::getConnection()->getLastExecutedQuery(), $sql, 'with() with a special join() avoids subsequent queries');
+
+/**************************************************/
+/* sfPropelFinder::with() with an explicit join() */
+/**************************************************/
+
+$t->diag('sfPropelFinder::with() with an explicit join()');
+
+$finder = sfPropelFinder::from('Article')->
+  leftJoin('Article.CategoryId', 'Category.Id')->
+  with('Category');
+$article = $finder->findOne();
+$t->is($finder->getLatestQuery(), $sql, 'An explicit join() is used in the SQL query');
+$t->is($article->getTitle(), 'aaaaa', 'with() with an explicit join() does not change the main object hyration');
+$category = $article->getCategory();
+$t->is($category->getName(), 'cat1', 'with() with an explicit join() hydrates the related objects');
+$t->is(Propel::getConnection()->getLastExecutedQuery(), $sql, 'with() with an explicit join() avoids subsequent queries');
+
+/*************************************************/
+/* sfPropelFinder::with() with an aliased join() */
+/*************************************************/
+
+$t->diag('sfPropelFinder::with() with an aliased join()');
+
+$finder = sfPropelFinder::from('Article')->
+  leftJoin('Category c')->
+  with('c');
+$article = $finder->findOne();
+$sql = 'SELECT article.ID, article.TITLE, article.CATEGORY_ID, c.ID, c.NAME FROM article LEFT JOIN category c ON (article.CATEGORY_ID=c.ID) LIMIT 1';
+$t->is($finder->getLatestQuery(), $sql, 'A join() alias is used in the SQL query');
+$t->is($article->getTitle(), 'aaaaa', 'with() with an aliased join() does not change the main object hyration');
+$category = $article->getCategory();
+$t->is($category->getName(), 'cat1', 'with() with an aliased join() hydrates the related objects');
+$t->is(Propel::getConnection()->getLastExecutedQuery(), $sql, 'with() with an aliased join() avoids subsequent queries');
+
+/**************************************************/
+/* sfPropelFinder::with() with an explicit join() */
+/**************************************************/
+
+$t->diag('sfPropelFinder::with() with an explicit aliased join()');
+
+$finder = sfPropelFinder::from('Article')->
+  leftJoin('Category c', 'Article.CategoryId', 'c.Id')->
+  with('c');
+$article = $finder->findOne();
+$t->is($finder->getLatestQuery(), $sql, 'An aliased join() is used in the SQL query');
+$t->is($article->getTitle(), 'aaaaa', 'with() with an explicit aliased join() does not change the main object hyration');
+$category = $article->getCategory();
+$t->is($category->getName(), 'cat1', 'with() with an explicit alias join() hydrates the related objects');
+$t->is(Propel::getConnection()->getLastExecutedQuery(), $sql, 'with() with an explicit aliased join() avoids subsequent queries');
+
+
+/***********************************************/
+/* sfPropelFinder::with() called several times */
+/***********************************************/
+
+$t->diag('sfPropelFinder::with() called several times (a related to b, a related to c)');
 
 CommentPeer::doDeleteAll();
 ArticlePeer::doDeleteAll();
@@ -100,23 +197,112 @@ $comment->setContent('foo');
 $comment->setArticleId($article1->getId());
 $comment->setAuthor($author1);
 $comment->save();
-$finder = sfPropelFinder::from('Comment')->with('Article')->with('Author');
+$finder = sfPropelFinder::from('Comment')->
+  with('Article')->
+  with('Author');
 $comment = $finder->findOne();
 $sql = 'SELECT comment.ID, comment.CONTENT, comment.ARTICLE_ID, comment.AUTHOR_ID, article.ID, article.TITLE, article.CATEGORY_ID, author.ID, author.NAME FROM comment INNER JOIN article ON (comment.ARTICLE_ID=article.ID) INNER JOIN author ON (comment.AUTHOR_ID=author.ID) LIMIT 1';
-$t->is($finder->getLatestQuery(), $sql, 'you can call with() several times to hydrate more than one related object');
-$t->is($comment->getContent(), 'foo', 'you can call with() several times to hydrate more than one related object');
-$t->is($comment->getArticle()->getTitle(), 'bbbbb', 'you can call with() several times to hydrate more than one related object');
-$t->is($comment->getAuthor()->getName(), 'John', 'you can call with() several times to hydrate more than one related object');
-$t->is(Propel::getConnection()->getLastExecutedQuery(), $sql, 'with() called several tims hydrates the related classes and avoids subsequent queries');
+$t->is($finder->getLatestQuery(), $sql, 'Each call to with adds the columns of a model to the SQL query');
+$t->is($comment->getContent(), 'foo', 'with() called several times does not change the main object hyration');
+$t->is($comment->getArticle()->getTitle(), 'bbbbb', 'with() called several times hydrates the related objects');
+$t->is($comment->getAuthor()->getName(), 'John', 'with() called several times hydrates the related objects');
+$t->is(Propel::getConnection()->getLastExecutedQuery(), $sql, 'with() called several times  avoids subsequent queries');
 
-$sql = 'SELECT comment.ID, comment.CONTENT, comment.ARTICLE_ID, comment.AUTHOR_ID, article.ID, article.TITLE, article.CATEGORY_ID, category.ID, category.NAME FROM comment INNER JOIN article ON (comment.ARTICLE_ID=article.ID) INNER JOIN category ON (article.CATEGORY_ID=category.ID) LIMIT 1';
-$finder = sfPropelFinder::from('Comment')->with('Article')->with('Category');
+$t->diag('sfPropelFinder::with() called several times (a related to b, b related to c)');
+
+$finder = sfPropelFinder::from('Comment')->
+  with('Article')->
+  with('Category');
 $comment = $finder->findOne();
-$t->is($finder->getLatestQuery(), $sql, 'with() can even hydrate related objects via a related object');
+$sql = 'SELECT comment.ID, comment.CONTENT, comment.ARTICLE_ID, comment.AUTHOR_ID, article.ID, article.TITLE, article.CATEGORY_ID, category.ID, category.NAME FROM comment INNER JOIN article ON (comment.ARTICLE_ID=article.ID) INNER JOIN category ON (article.CATEGORY_ID=category.ID) LIMIT 1';
+$t->is($finder->getLatestQuery(), $sql, 'Each call to with adds the columns of a model to the SQL query');
+$t->is($comment->getContent(), 'foo', 'with() called several times does not change the main object hyration');
+$t->is($comment->getArticle()->getTitle(), 'bbbbb', 'with() called several times hydrates the related objects');
+$t->is($comment->getArticle()->getCategory()->getName(), 'cat1', 'with() called several times hydrates the related objects');
+$t->is(Propel::getConnection()->getLastExecutedQuery(), $sql, 'with() called several times avoids subsequent queries');
+
+/*************************************************************/
+/* sfPropelFinder::with() called with more than one argument */
+/*************************************************************/
+
+$t->diag('sfPropelFinder::with() called with more than one argument');
 
 $finder = sfPropelFinder::from('Comment')->with('Article', 'Category');
 $comment = $finder->findOne();
 $t->is($finder->getLatestQuery(), $sql, 'with() accepts several arguments, so you don\'t need to call it several times');
+
+/***********************************************************************/
+/* sfPropelFinder::with() with multiple foreign keys to the same table */
+/***********************************************************************/
+
+$t->diag('sfPropelFinder::with() with multiple foreign keys to the same table');
+
+HumanPeer::doDeleteAll();
+HousePeer::doDeleteAll();
+$human1 = new Human();
+$human1->setName('John');
+$human1->save();
+$human2 = new Human();
+$human2->setName('Jane');
+$human2->save();
+$house1 = new House();
+$house1->setName('Home1');
+$house1->setHumanRelatedByOwnerId($human1);
+$house1->setHumanRelatedByRenterId($human2);
+$house1->save();
+$finder = sfPropelFinder::from('House')->
+  join('Human owner', 'House.OwnerId', 'owner.Id', 'INNER JOIN')->
+  with('owner')->
+  where('owner.Name', 'John');
+$house = $finder->findOne();
+$sql = 'SELECT house.ID, house.NAME, house.OWNER_ID, house.RENTER_ID, owner.ID, owner.NAME, owner.FATHER_ID, owner.MOTHER_ID, owner.THE_SEX FROM house INNER JOIN human owner ON (house.OWNER_ID=owner.ID) WHERE owner.NAME=\'John\' LIMIT 1';
+$t->is($finder->getLatestQuery(), $sql, 'with() adds the correct columns to the query when called on a foreign key to a table with more than one relation');
+$t->is($house->getName(), 'Home1', 'with() with multiple foreign keys to the same table does not change the main object hyration');
+$t->is($house->getHumanRelatedByOwnerId()->getName(), 'John', 'with() with multiple foreign keys to the same table hydrates the related objects');
+$t->is($finder->getLatestQuery(), $sql, 'with() with multiple foreign keys to the same table avoids subsequent queries');
+
+$finder = sfPropelFinder::from('House')->
+  join('Human owner', 'House.OwnerId', 'owner.Id', 'INNER JOIN')->
+  join('Human renter', 'House.RenterId', 'renter.Id', 'INNER JOIN')->
+  with('owner', 'renter')->
+  where('owner.Name', 'John');
+$house = $finder->findOne();
+$sql = 'SELECT house.ID, house.NAME, house.OWNER_ID, house.RENTER_ID, owner.ID, owner.NAME, owner.FATHER_ID, owner.MOTHER_ID, owner.THE_SEX, renter.ID, renter.NAME, renter.FATHER_ID, renter.MOTHER_ID, renter.THE_SEX FROM house INNER JOIN human owner ON (house.OWNER_ID=owner.ID) INNER JOIN human renter ON (house.RENTER_ID=renter.ID) WHERE owner.NAME=\'John\' LIMIT 1';
+$t->is($finder->getLatestQuery(), $sql, 'with() adds the correct columns to the query when called several times on a foreign key to a table with more than one relation');
+$t->is($house->getName(), 'Home1', 'with() with multiple foreign keys to the same table does not change the main object hyration');
+$t->is($house->getHumanRelatedByOwnerId()->getName(), 'John', 'with() with multiple foreign keys to the same table hydrates the related objects');
+$t->is($house->getHumanRelatedByRenterId()->getName(), 'Jane', 'with() with multiple foreign keys to the same table hydrates the related objects');
+$t->is($finder->getLatestQuery(), $sql, 'with() with multiple foreign keys to the same table avoids subsequent queries');
+
+/************************************************************/
+/* sfPropelFinder::with() with self-referenced foreign keys */
+/************************************************************/
+
+$t->diag('sfPropelFinder::with() with self-referenced foreign keys');
+
+HumanPeer::doDeleteAll();
+$human1 = new Human();
+$human1->setName('John');
+$human1->save();
+$human2 = new Human();
+$human2->setName('Albert');
+$human2->setHumanRelatedByFatherId($human1);
+$human2->save();
+
+$finder = sfPropelFinder::from('Human')->
+  join('Human father', 'Human.FatherId', 'father.Id', 'INNER JOIN')->
+  with('father')->
+  where('father.Name', 'John');
+$human = $finder->findOne();
+$sql = 'SELECT human.ID, human.NAME, human.FATHER_ID, human.MOTHER_ID, human.THE_SEX, father.ID, father.NAME, father.FATHER_ID, father.MOTHER_ID, father.THE_SEX FROM human INNER JOIN human father ON (human.FATHER_ID=father.ID) WHERE father.NAME=\'John\' LIMIT 1';
+$t->is($finder->getLatestQuery(), $sql, 'with() adds the correct columns to the query when called with self-referenced foreign keys');
+$t->is($human->getName(), 'Albert', 'with() with self-referenced foreign keys does not change the main object hyration');
+$t->is($human->getHumanRelatedByFatherId()->getName(), 'John', 'with() with self-referenced foreign keys hydrates the related objects');
+$t->is($finder->getLatestQuery(), $sql, 'with() with self-referenced foreign keys avoids subsequent queries');
+
+/******************************/
+/* sfPropelFinder::withI18n() */
+/******************************/
 
 $t->diag('withI18n()');
 

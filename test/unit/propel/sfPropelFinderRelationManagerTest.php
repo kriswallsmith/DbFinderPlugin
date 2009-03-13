@@ -57,7 +57,7 @@ include dirname(__FILE__).'/../../bootstrap.php';
 CommentPeer::doDeleteAll();
 ArticlePeer::doDeleteAll();
 
-$t = new lime_test(45, new lime_output_color());
+$t = new lime_test(49, new lime_output_color());
 
 /*************************************************/
 /* sfPropelFinderRelationManager::findRelation() */
@@ -152,6 +152,7 @@ catch (Exception $e)
 $t->is($exceptionThrown, false, 'guessRelation() guesses relationships via already related classes (one-to-many, many-to-one)');
 $t->is($relation->getFromClass(), 'Comment', 'guessRelation() returns a relation object starting at the correct class');
 $t->is($relation->getToClass(), 'Author', 'guessRelation() returns a relation object ending at the given class');
+$t->isa_ok($relation->getPreviousRelation(), 'sfPropelFinderRelation', 'guessRelation() returns a relation object keeping track of the previous relation');
 
 $manager = new sfPropelFinderRelationManager('Category');
 $manager[] = $manager->guessRelation('Article');
@@ -168,6 +169,7 @@ catch (Exception $e)
 $t->is($exceptionThrown, false, 'guessRelation() guesses relationships via already related classes(one-to-many, one-to-many)');
 $t->is($relation->getFromClass(), 'Article', 'guessRelation() returns a relation object starting at the correct class');
 $t->is($relation->getToClass(), 'Comment', 'guessRelation() returns a relation object ending at the given class');
+$t->isa_ok($relation->getPreviousRelation(), 'sfPropelFinderRelation', 'guessRelation() returns a relation object keeping track of the previous relation');
 
 $manager = new sfPropelFinderRelationManager('Comment');
 $manager[] = $manager->guessRelation('Article');
@@ -183,6 +185,7 @@ catch (Exception $e)
 $t->is($exceptionThrown, false, 'guessRelation() guesses relationships via already related classes (many-to-one, many-to-one)');
 $t->is($relation->getFromClass(), 'Article', 'guessRelation() returns a relation object starting at the correct class');
 $t->is($relation->getToClass(), 'Category', 'guessRelation() returns a relation object ending at the given class');
+$t->isa_ok($relation->getPreviousRelation(), 'sfPropelFinderRelation', 'guessRelation() returns a relation object keeping track of the previous relation');
 
 $manager = new sfPropelFinderRelationManager('Comment');
 $manager[] = $manager->guessRelation('Article');
@@ -198,6 +201,7 @@ catch (Exception $e)
 $t->is($exceptionThrown, false, 'guessRelation() guesses relationships via already related classes (many-to-one, one-to-many)');
 $t->is($relation->getFromClass(), 'Article', 'guessRelation() returns a relation object starting at the correct class');
 $t->is($relation->getToClass(), 'ArticleI18n', 'guessRelation() returns a relation object ending at the given class');
+$t->isa_ok($relation->getPreviousRelation(), 'sfPropelFinderRelation', 'guessRelation() returns a relation object keeping track of the previous relation');
 
 $manager = new sfPropelFinderRelationManager('Author');
 $manager[] = $manager->guessRelation('Comment');
