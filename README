@@ -734,7 +734,8 @@ Changelog
 
 ### 2009-03-13 | Trunk
 
-* francois: Added support for aliases in `sfPropelFinder::with()`
+* francois: Improved performance when using `sfPropelFinder::with()` and `sfPropelFinder::withI18n()`
+* francois: Added support for aliases in `sfPropelFinder::with()`, and `sfPropelFinder::withColumn()`
 * francois: Added support for aliases in `sfPropelFinder::join()`
 * francois: Added a gazillon tests for Propel joins
 * francois: Added support for self-referenced foreign keys and multiple foreign keys to the same table in `sfPropelFinder::join()`

@@ -65,7 +65,7 @@ Beware that the tables for these models will be emptied by the tests, so use a t
 
 include dirname(__FILE__).'/../../bootstrap.php';
 
-$t = new lime_test(82, new lime_output_color());
+$t = new lime_test(86, new lime_output_color());
 
 /**************************/
 /* sfPropelFinder::with() */
@@ -259,7 +259,7 @@ $sql = 'SELECT house.ID, house.NAME, house.OWNER_ID, house.RENTER_ID, owner.ID, 
 $t->is($finder->getLatestQuery(), $sql, 'with() adds the correct columns to the query when called on a foreign key to a table with more than one relation');
 $t->is($house->getName(), 'Home1', 'with() with multiple foreign keys to the same table does not change the main object hyration');
 $t->is($house->getHumanRelatedByOwnerId()->getName(), 'John', 'with() with multiple foreign keys to the same table hydrates the related objects');
-$t->is($finder->getLatestQuery(), $sql, 'with() with multiple foreign keys to the same table avoids subsequent queries');
+$t->is(Propel::getConnection()->getLastExecutedQuery(), $sql, 'with() with multiple foreign keys to the same table avoids subsequent queries');
 
 $finder = sfPropelFinder::from('House')->
   join('Human owner', 'House.OwnerId', 'owner.Id', 'INNER JOIN')->
@@ -272,7 +272,7 @@ $t->is($finder->getLatestQuery(), $sql, 'with() adds the correct columns to the 
 $t->is($house->getName(), 'Home1', 'with() with multiple foreign keys to the same table does not change the main object hyration');
 $t->is($house->getHumanRelatedByOwnerId()->getName(), 'John', 'with() with multiple foreign keys to the same table hydrates the related objects');
 $t->is($house->getHumanRelatedByRenterId()->getName(), 'Jane', 'with() with multiple foreign keys to the same table hydrates the related objects');
-$t->is($finder->getLatestQuery(), $sql, 'with() with multiple foreign keys to the same table avoids subsequent queries');
+$t->is(Propel::getConnection()->getLastExecutedQuery(), $sql, 'with() with multiple foreign keys to the same table avoids subsequent queries');
 
 /************************************************************/
 /* sfPropelFinder::with() with self-referenced foreign keys */
@@ -298,13 +298,13 @@ $sql = 'SELECT human.ID, human.NAME, human.FATHER_ID, human.MOTHER_ID, human.THE
 $t->is($finder->getLatestQuery(), $sql, 'with() adds the correct columns to the query when called with self-referenced foreign keys');
 $t->is($human->getName(), 'Albert', 'with() with self-referenced foreign keys does not change the main object hyration');
 $t->is($human->getHumanRelatedByFatherId()->getName(), 'John', 'with() with self-referenced foreign keys hydrates the related objects');
-$t->is($finder->getLatestQuery(), $sql, 'with() with self-referenced foreign keys avoids subsequent queries');
+$t->is(Propel::getConnection()->getLastExecutedQuery(), $sql, 'with() with self-referenced foreign keys avoids subsequent queries');
 
 /******************************/
 /* sfPropelFinder::withI18n() */
 /******************************/
 
-$t->diag('withI18n()');
+$t->diag('sfPropelFinder::withI18n()');
 
 CommentPeer::doDeleteAll();
 ArticlePeer::doDeleteAll();
@@ -319,19 +319,22 @@ $article1->save();
 
 $baseSQL = 'SELECT article.ID, article.TITLE, article.CATEGORY_ID, article_i18n.CONTENT, article_i18n.ID, article_i18n.CULTURE FROM article INNER JOIN article_i18n ON (article.ID=article_i18n.ID) ';
 sfContext::getInstance()->getUser()->setCulture('en');
-$finder = sfPropelFinder::from('Article')->withI18n();
+$finder = sfPropelFinder::from('Article')->
+  withI18n();
 $article = $finder->findOne();
-$query = $finder->getLatestQuery();
-$t->is($query, $baseSQL . 'WHERE article_i18n.CULTURE=\'en\' LIMIT 1', 'withI18n() hydrates the related I18n object with a culture taken from the user object');
+$query = $baseSQL . 'WHERE article_i18n.CULTURE=\'en\' LIMIT 1';
+$t->is($finder->getLatestQuery(), $query, 'withI18n() hydrates the related I18n object with a culture taken from the user object');
 $t->is($article->getContent(), 'english content', 'withI18n() considers the current user culture for hydration');
 $t->is(Propel::getConnection()->getLastExecutedQuery(), $query, 'withI18n() hydrates the i18n object so that no further query is necessary');
 
 sfContext::getInstance()->getUser()->setCulture('fr');
-$finder = sfPropelFinder::from('Article')->withI18n();
+$finder = sfPropelFinder::from('Article')->
+  withI18n();
 $article = $finder->findOne();
-
-$t->is($finder->getLatestQuery(), $baseSQL . 'WHERE article_i18n.CULTURE=\'fr\' LIMIT 1', 'withI18n() hydrates the related I18n object with a culture taken from the user object');
+$query = $baseSQL . 'WHERE article_i18n.CULTURE=\'fr\' LIMIT 1';
+$t->is($finder->getLatestQuery(), $query, 'withI18n() hydrates the related I18n object with a culture taken from the user object');
 $t->is($article->getContent(), 'contenu français', 'withI18n() considers the current user culture for hydration');
+$t->is(Propel::getConnection()->getLastExecutedQuery(), $query, 'withI18n() hydrates the i18n object so that no further query is necessary');
 
 sfContext::getInstance()->getUser()->setCulture('fr');
 $article = sfPropelFinder::from('Article')->
@@ -340,12 +343,15 @@ $article = sfPropelFinder::from('Article')->
 $t->is($article->getContent(), 'english content', 'withI18n() accepts a culture parameter to override the user culture');
 
 sfContext::getInstance()->getUser()->setCulture('en');
-$finder = sfPropelFinder::from('Article')->with('I18n');
+$finder = sfPropelFinder::from('Article')->
+  with('I18n');
 $article = $finder->findOne();
-$t->is($finder->getLatestQuery(), $baseSQL . 'WHERE article_i18n.CULTURE=\'en\' LIMIT 1', 'with(\'I18n\') is a synonym for withI18n()');
-$finder = sfPropelFinder::from('Article')->with('i18n');
+$query = $baseSQL . 'WHERE article_i18n.CULTURE=\'en\' LIMIT 1';
+$t->is($finder->getLatestQuery(), $query, 'with(\'I18n\') is a synonym for withI18n()');
+$finder = sfPropelFinder::from('Article')->
+  with('i18n');
 $article = $finder->findOne();
-$t->is($finder->getLatestQuery(), $baseSQL . 'WHERE article_i18n.CULTURE=\'en\' LIMIT 1', 'with(\'i18n\') is a synonym for withI18n()');
+$t->is($finder->getLatestQuery(), $query, 'with(\'i18n\') is a synonym for withI18n()');
 
 $t->diag('withColumn()');
 
@@ -440,6 +446,26 @@ $finder = sfPropelFinder::from('Article')->
 $article = $finder->findOne();
 $t->is($finder->getLatestQuery(), 'SELECT article.ID, article.TITLE, article.CATEGORY_ID, COUNT(comment.ID) AS NbComments FROM article INNER JOIN comment ON (article.ID=comment.ARTICLE_ID) GROUP BY article.ID ORDER BY NbComments ASC LIMIT 1', 'Columns added with withColumn() can be used for sorting');
 
+$finder = sfPropelFinder::from('Comment')->
+  join('Article a')->
+  withColumn('a.Title');
+$comment = $finder->findOne();
+$t->is($comment->getColumn('a.Title'), 'bbbbb', 'withColumn() support table aliases');
+$t->is($finder->getLatestQuery(), 'SELECT comment.ID, comment.CONTENT, comment.ARTICLE_ID, comment.AUTHOR_ID, a.TITLE AS "a.Title" FROM comment INNER JOIN article a ON (comment.ARTICLE_ID=a.ID) LIMIT 1', 'Columns using a table alias added with withColumn() use the alias in the query');
+
+$finder = sfPropelFinder::from('Article')->
+  join('Comment c')->
+  groupBy('Article.Id')->
+  withColumn('COUNT(c.Id)', 'NbComments')->
+  orderBy('NbComments');
+$article = $finder->findOne();
+$t->is($finder->getLatestQuery(), 'SELECT article.ID, article.TITLE, article.CATEGORY_ID, COUNT(c.ID) AS NbComments FROM article INNER JOIN comment c ON (article.ID=c.ARTICLE_ID) GROUP BY article.ID ORDER BY NbComments ASC LIMIT 1', 'withColumn() support table aliases in calculated columns');
+
+/*************************************/
+/* Various issues solved in the past */
+/* Kept for regression testing       */
+/************************************/
+
 $t->diag('sfPropelFinder::with() issues with object finders classes');
 class ArticleFinder extends sfPropelFinder
 {
@@ -483,13 +509,18 @@ $article2 = new Article();
 $article2->setTitle('bbb');
 $article2->save();
 
-$article = sfPropelFinder::from('Article')->leftJoin('Category')->with('Category')->findLast();
+$article = sfPropelFinder::from('Article')->
+  leftJoin('Category')->
+  with('Category')->
+  findLast();
 $t->isa_ok($article->getCategory(), 'NULL', 'In a left join using with(), empty related objects are not hydrated');
 
 $t->diag('sfPropelFinder::addJoin() not being redirected to Criteria');
 try
 {
-  $article = sfPropelFinder::from('Article')->addJoin(ArticlePeer::CATEGORY_ID, CategoryPeer::ID, Criteria::LEFT_JOIN)->findLast();
+  $article = sfPropelFinder::from('Article')->
+    addJoin(ArticlePeer::CATEGORY_ID, CategoryPeer::ID, Criteria::LEFT_JOIN)->
+    findLast();
   $t->pass('addJoin() is properly redirected to the Criteria object');
 }
 catch(Exception $e)
@@ -501,13 +532,15 @@ $t->diag('sfPropelFinder::join() called several times');
 
 try
 {
-  sfPropelFinder::from('Article')->join('Category')->join('Category')->count();
-  $t->pass('sfPropelFinder::with() can be used with auto joins');
+  sfPropelFinder::from('Article')->
+    join('Category')->
+    join('Category')->
+    count();
+  $t->pass('join() can be called several times on the same class');
 }
 catch(Exception $e)
 {
-  $t->fail('sfPropelFinder::with() can be used with auto joins');
-  echo $e->getMessage();
+  $t->fail('join() can be called several times on the same class');
 }
 
 $t->diag('sfPropelFinder::withColumn() on calculated columns with decimals');

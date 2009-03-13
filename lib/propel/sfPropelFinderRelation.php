@@ -14,7 +14,8 @@ class sfPropelFinderRelation
     $type,
     $previousRelation,
     $getPreviousMethod,
-    $addToMethod;
+    $addToMethod,
+    $isI18n = false;
   
   const
     ONE_TO_MANY = false,
@@ -77,6 +78,16 @@ class sfPropelFinderRelation
   public function setAlias($alias)
   {
     $this->alias = $alias;
+  }
+  
+  public function isI18n()
+  {
+    return $this->isI18n;
+  }
+  
+  public function setI18n()
+  {
+    return $this->isI18n = true;
   }
   
   public function getType()
@@ -175,6 +186,16 @@ class sfPropelFinderRelation
       call_user_func(array($objectToRelate, $this->initMethod));
     }
     call_user_func(array($objectToRelate, $this->addToMethod), $baseObject);
+  }
+  
+  public function relateI18nObject($baseObject, $objectToRelate, $culture)
+  {
+    $methodName = 'set'.$this->getToClass().'ForCulture';
+    if(method_exists($baseObject, $methodName))
+    {
+      call_user_func(array($baseObject, $methodName), $objectToRelate, $culture);
+      call_user_func(array($objectToRelate, 'set'.$this->getFromClass()), $baseObject);
+    }
   }
   
   public function addSelectColumns($c)

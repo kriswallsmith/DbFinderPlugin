@@ -733,9 +733,9 @@ class sfPropelFinder extends sfModelFinder
               break;
             }
           }
-          if(strpos(get_class($withObj), 'I18n') !== false)
+          if($relation->isI18n())
           {
-            sfPropelFinderUtils::relateI18nObjects($withObj, $objectsInJoin, $this->culture);
+            $relation->relateI18nObject($obj, $withObj, $this->culture);
           }
           else
           {
@@ -789,7 +789,7 @@ class sfPropelFinder extends sfModelFinder
   }
   
   /**
-   * Adds missing Joins from with() and withColumn()
+   * Adds missing Joins from with()
    */
   protected function addMissingJoins()
   {
@@ -798,17 +798,6 @@ class sfPropelFinder extends sfModelFinder
       if(!$this->hasRelation($className))
       {
         $this->join($className);
-      }
-    }
-    foreach($this->getWithColumns() as $alias => $column)
-    {
-      if($peerClass = $column['peerClass'])
-      {
-        $class = sfPropelFinderUtils::getClassFromPeerClass($peerClass);
-        if($class && !$this->hasRelation($class))
-        {
-          $this->join($class);
-        }
       }
     }
     
@@ -891,10 +880,23 @@ class sfPropelFinder extends sfModelFinder
    */
   public function withI18n($culture = null)
   {
-    $i18nClass = method_exists($this->peerClass, 'getI18nModel') ? call_user_func(array($this->peerClass, 'getI18nModel')) : $this->class.'I18n';
-    $this->addWithClass($i18nClass);
-    $this->culture = is_null($culture) ? sfContext::getInstance()->getUser()->getCulture() : $culture;
-    $this->criteria->add(constant(sfPropelFinderUtils::getPeerClassFromClass($i18nClass).'::CULTURE'), $this->culture);
+    if(method_exists($this->peerClass, 'getI18nModel'))
+    {
+      $i18nClass = call_user_func(array($this->peerClass, 'getI18nModel'));
+    }
+    else
+    {
+      $i18nClass = $this->class.'I18n';
+    }
+    if($relation = $this->getRelations()->addRelationFromClass($i18nClass))
+    {
+      $relation->setI18n();
+      $this->criteria->addJoin($relation->getFromColumn(), $relation->getToColumn(), Criteria::INNER_JOIN);
+      $this->culture = is_null($culture) ? sfContext::getInstance()->getUser()->getCulture() : $culture;
+      $peerClass = sfPropelFinderUtils::getPeerClassFromClass($i18nClass);
+      $this->criteria->add(constant($peerClass.'::CULTURE'), $this->culture);
+      $this->addWithClass($i18nClass);
+    }
     
     return $this;
   }
@@ -948,16 +950,14 @@ class sfPropelFinder extends sfModelFinder
     if($isCalculationColumn)
     {
       list($column, $colnames) = $this->replaceNames($column);
-      $peerClass = null;
     }
     else
     {
-      list($peerClass, $columnName) = $this->getColName($column, null, true);
+      $columnName = $this->getColName($column, null, false, true);
     }
     $this->withColumns [$alias]= array(
       'column'    => $isCalculationColumn ? $column : $columnName,
-      'type'      => $type,
-      'peerClass' => $peerClass
+      'type'      => $type
     );
     
     return $this;
@@ -1417,7 +1417,9 @@ class sfPropelFinder extends sfModelFinder
       case 1:
       case 2:
         // $articleFinder->join('Comment')
+        // $articleFinder->join('Comment co')
         // $articleFinder->join('Category', 'RIGHT JOIN')
+        // $articleFinder->join('Category ca', 'RIGHT JOIN')
         list($class, $alias) = $this->getClassAndAlias($args[0]);
         $relation = $this->getRelations()->addRelationFromClass($class, $alias);
         if(!$relation)
@@ -1425,7 +1427,7 @@ class sfPropelFinder extends sfModelFinder
           // There is already a relation on this table, so skip the join
           return $this;
         }
-        if($class != $alias)
+        if($alias)
         {
           $table = constant(sfPropelFinderUtils::getPeerClassFromClass($class).'::TABLE_NAME');
           $this->criteria->addAlias($alias, $table);
@@ -1466,6 +1468,7 @@ class sfPropelFinder extends sfModelFinder
           return $this;
         }
         $this->criteria->addAlias($alias, $table);
+        break;
     }
     $operator = trim(str_replace('JOIN', '', strtoupper($operator))) . ' JOIN';
     $this->criteria->addJoin($relation->getFromColumn(), $relation->getToColumn(), $operator);
@@ -1626,11 +1629,7 @@ class sfPropelFinder extends sfModelFinder
     }
     else
     {
-      $alias = $class;
-      while(isset($this->relations[$alias]))
-      {
-        $alias .= '1';
-      }
+      $alias = null;
     }
     return array($class, $alias);
   }

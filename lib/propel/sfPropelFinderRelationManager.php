@@ -67,7 +67,7 @@ class sfPropelFinderRelationManager implements ArrayAccess
     else
     {
       $relation = $this->guessRelation($class);
-      if($alias != $class)
+      if($alias)
       {
         if($relation->getToColumn() == $class)
         {

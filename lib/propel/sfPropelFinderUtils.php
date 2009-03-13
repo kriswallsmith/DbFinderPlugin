@@ -15,21 +15,6 @@ class sfPropelFinderUtils
     $peerClasses = array(),
     $classes = array();
   
-  public static function relateI18nObjects($new, $existingObjects, $culture)
-  {
-    // brute force (to be optimized later)
-    foreach ($existingObjects as $existingObject)
-    {
-      $methodName = 'set'.get_class($new).'ForCulture';
-      if(method_exists($existingObject, $methodName))
-      {
-        call_user_func(array($existingObject, $methodName), $new, $culture);
-        call_user_func(array($new, 'set'.get_class($existingObject)), $existingObject);
-        break;
-      }
-    }
-  }
-  
   public static function getPeerClassFromClass($class)
   {
     if(!isset(self::$peerClasses[$class]))
