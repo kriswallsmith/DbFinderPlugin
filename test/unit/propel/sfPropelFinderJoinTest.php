@@ -328,7 +328,7 @@ $finder = sfPropelFinder::from('Article')->
   where('c.Name', 'cat1');
 $nbArticles = $finder->count();
 $t->is($nbArticles, 2, 'join($classAndAlias) understands subsequent uses of the alias in where()');
-$t->is($finder->getLatestQuery(), 'SELECT COUNT(article.ID) FROM article INNER JOIN category c ON (article.CATEGORY_ID=c.ID) WHERE c.NAME=\'cat1\'', 'join($classAndAlias) uses the alias in the query');
+$t->is($finder->getLatestQuery(), propel_sql('SELECT COUNT([P13*][P12article.ID]) FROM article INNER JOIN category c ON (article.CATEGORY_ID=c.ID) WHERE c.NAME=\'cat1\''), 'join($classAndAlias) uses the alias in the query');
 
 /*************************************************************/
 /* sfPropelFinder::join() and subsequent finder method calls */
@@ -362,28 +362,28 @@ $finder = sfPropelFinder::from('Article')->
   where('Category.Name', 'cat1')->
   orWhere('Category.Name', 'cat2');
 $finder->count();
-$t->is($finder->getLatestQuery(), 'SELECT COUNT(article.ID) FROM article INNER JOIN category ON (article.CATEGORY_ID=category.ID) WHERE (category.NAME=\'cat1\' OR category.NAME=\'cat2\')', 'join() allows columns of joined table to be used in orWhere()');
+$t->is($finder->getLatestQuery(), propel_sql('SELECT COUNT([P13*][P12article.ID]) FROM article INNER JOIN category ON (article.CATEGORY_ID=category.ID) WHERE (category.NAME=\'cat1\' OR category.NAME=\'cat2\')'), 'join() allows columns of joined table to be used in orWhere()');
 $finder = sfPropelFinder::from('Article')->
   join('Category')->
   whereCustom('Category.Name = ?', 'cat1');
 $finder->count();
-$t->is($finder->getLatestQuery(), 'SELECT COUNT(article.ID) FROM article INNER JOIN category ON (article.CATEGORY_ID=category.ID) WHERE category.NAME = \'cat1\'', 'join() allows columns of joined table to be used in whereCustom()');
+$t->is($finder->getLatestQuery(), propel_sql('SELECT COUNT([P13*][P12article.ID]) FROM article INNER JOIN category ON (article.CATEGORY_ID=category.ID) WHERE category.NAME = \'cat1\''), 'join() allows columns of joined table to be used in whereCustom()');
 $finder = sfPropelFinder::from('Article')->
   join('Category')->
   where('Category.Name', 'cat1')->
   orWhereCustom('Category.Name = ?', 'cat2');
 $finder->count();
-$t->is($finder->getLatestQuery(), 'SELECT COUNT(article.ID) FROM article INNER JOIN category ON (article.CATEGORY_ID=category.ID) WHERE (category.NAME=\'cat1\' OR category.NAME = \'cat2\')', 'join() allows columns of joined table to be used in orWhereCustom()');
+$t->is($finder->getLatestQuery(), propel_sql('SELECT COUNT([P13*][P12article.ID]) FROM article INNER JOIN category ON (article.CATEGORY_ID=category.ID) WHERE (category.NAME=\'cat1\' OR category.NAME = \'cat2\')'), 'join() allows columns of joined table to be used in orWhereCustom()');
 $finder = sfPropelFinder::from('Article')->
   join('Category')->
   orderBy('Category.Name');
 $finder->find();
-$t->is($finder->getLatestQuery(), 'SELECT article.ID, article.TITLE, article.CATEGORY_ID, UPPER(category.NAME) FROM article INNER JOIN category ON (article.CATEGORY_ID=category.ID) ORDER BY UPPER(category.NAME) ASC', 'join() allows columns of joined table to be used in orderBy()');
+$t->is($finder->getLatestQuery(), propel_sql('SELECT article.ID, article.TITLE, article.CATEGORY_ID[P12, UPPER(category.NAME)] FROM article INNER JOIN category ON (article.CATEGORY_ID=category.ID) ORDER BY [P12UPPER(category.NAME)][P13category.NAME] ASC'), 'join() allows columns of joined table to be used in orderBy()');
 $finder = sfPropelFinder::from('Article')->
   join('Category')->
   groupBy('Category.Name');
-$finder->count();
-$t->is($finder->getLatestQuery(), 'SELECT COUNT(article.ID), category.NAME FROM article INNER JOIN category ON (article.CATEGORY_ID=category.ID) GROUP BY category.NAME', 'join() allows columns of joined table to be used in groupBy()');
+$finder->find();
+$t->is($finder->getLatestQuery(), 'SELECT article.ID, article.TITLE, article.CATEGORY_ID FROM article INNER JOIN category ON (article.CATEGORY_ID=category.ID) GROUP BY category.NAME', 'join() allows columns of joined table to be used in groupBy()');
 
 /***************************************************************************/
 /* sfPropelFinder::join($classAndAlias) and subsequent finder method calls */
@@ -417,28 +417,28 @@ $finder = sfPropelFinder::from('Article')->
   where('c.Name', 'cat1')->
   orWhere('c.Name', 'cat2');
 $finder->count();
-$t->is($finder->getLatestQuery(), 'SELECT COUNT(article.ID) FROM article INNER JOIN category c ON (article.CATEGORY_ID=c.ID) WHERE (c.NAME=\'cat1\' OR c.NAME=\'cat2\')', 'join($classAndAlias) allows columns of joined table to be used in orWhere()');
+$t->is($finder->getLatestQuery(), propel_sql('SELECT COUNT([P13*][P12article.ID]) FROM article INNER JOIN category c ON (article.CATEGORY_ID=c.ID) WHERE (c.NAME=\'cat1\' OR c.NAME=\'cat2\')'), 'join($classAndAlias) allows columns of joined table to be used in orWhere()');
 $finder = sfPropelFinder::from('Article')->
   join('Category c')->
   whereCustom('c.Name = ?', 'cat1');
 $finder->count();
-$t->is($finder->getLatestQuery(), 'SELECT COUNT(article.ID) FROM article INNER JOIN category c ON (article.CATEGORY_ID=c.ID) WHERE c.NAME = \'cat1\'', 'join($classAndAlias) allows columns of joined table to be used in whereCustom()');
+$t->is($finder->getLatestQuery(), propel_sql('SELECT COUNT([P13*][P12article.ID]) FROM article INNER JOIN category c ON (article.CATEGORY_ID=c.ID) WHERE c.NAME = \'cat1\''), 'join($classAndAlias) allows columns of joined table to be used in whereCustom()');
 $finder = sfPropelFinder::from('Article')->
   join('Category c')->
   where('c.Name', 'cat1')->
   orWhereCustom('c.Name = ?', 'cat2');
 $finder->count();
-$t->is($finder->getLatestQuery(), 'SELECT COUNT(article.ID) FROM article INNER JOIN category c ON (article.CATEGORY_ID=c.ID) WHERE (c.NAME=\'cat1\' OR c.NAME = \'cat2\')', 'join($classAndAlias) allows columns of joined table to be used in orWhereCustom()');
+$t->is($finder->getLatestQuery(), propel_sql('SELECT COUNT([P13*][P12article.ID]) FROM article INNER JOIN category c ON (article.CATEGORY_ID=c.ID) WHERE (c.NAME=\'cat1\' OR c.NAME = \'cat2\')'), 'join($classAndAlias) allows columns of joined table to be used in orWhereCustom()');
 $finder = sfPropelFinder::from('Article')->
   join('Category c')->
   orderBy('c.Name');
 $finder->find();
-$t->is($finder->getLatestQuery(), 'SELECT article.ID, article.TITLE, article.CATEGORY_ID, UPPER(c.NAME) FROM article INNER JOIN category c ON (article.CATEGORY_ID=c.ID) ORDER BY UPPER(c.NAME) ASC', 'join($classAndAlias) allows columns of joined table to be used in orderBy()');
+$t->is($finder->getLatestQuery(), propel_sql('SELECT article.ID, article.TITLE, article.CATEGORY_ID[P12, UPPER(c.NAME)] FROM article INNER JOIN category c ON (article.CATEGORY_ID=c.ID) ORDER BY [P12UPPER(c.NAME)][P13c.NAME] ASC'), 'join($classAndAlias) allows columns of joined table to be used in orderBy()');
 $finder = sfPropelFinder::from('Article')->
   join('Category c')->
   groupBy('c.Name');
-$finder->count();
-$t->is($finder->getLatestQuery(), 'SELECT COUNT(article.ID), c.NAME FROM article INNER JOIN category c ON (article.CATEGORY_ID=c.ID) GROUP BY c.NAME', 'join($classAndAlias) allows columns of joined table to be used in groupBy()');
+$finder->find();
+$t->is($finder->getLatestQuery(), 'SELECT article.ID, article.TITLE, article.CATEGORY_ID FROM article INNER JOIN category c ON (article.CATEGORY_ID=c.ID) GROUP BY c.NAME', 'join($classAndAlias) allows columns of joined table to be used in groupBy()');
 
 /************************************************************************************/
 /* sfPropelFinder::join($classAndAlias, $start, $end, $type) and subsequent where() */
@@ -472,7 +472,7 @@ $finder = sfPropelFinder::from('Article')->
   where('c.Name', 'cat1');
 $nbArticles = $finder->count();
 $t->is($nbArticles, 2, 'join() allows to join to another table using an alias (many-to-one)');
-$t->is($finder->getLatestQuery(), 'SELECT COUNT(article.ID) FROM article INNER JOIN category c ON (article.CATEGORY_ID=c.ID) WHERE c.NAME=\'cat1\'', 'join() uses aliased table names when using an alias relation');
+$t->is($finder->getLatestQuery(), propel_sql('SELECT COUNT([P13*][P12article.ID]) FROM article INNER JOIN category c ON (article.CATEGORY_ID=c.ID) WHERE c.NAME=\'cat1\''), 'join() uses aliased table names when using an alias relation');
 
 ArticlePeer::doDeleteAll();
 CommentPeer::doDeleteAll();
@@ -493,7 +493,7 @@ $finder = sfPropelFinder::from('Article')->
   where('c.Content', 'foo');
 $nbArticles = $finder->count();
 $t->is($nbArticles, 1, 'join() allows to join to another table using an alias (one-to-many)');
-$t->is($finder->getLatestQuery(), 'SELECT COUNT(article.ID) FROM article INNER JOIN comment c ON (article.ID=c.ARTICLE_ID) WHERE c.CONTENT=\'foo\'', 'join() uses aliased table names when using an alias relation');
+$t->is($finder->getLatestQuery(), propel_sql('SELECT COUNT([P13*][P12article.ID]) FROM article INNER JOIN comment c ON (article.ID=c.ARTICLE_ID) WHERE c.CONTENT=\'foo\''), 'join() uses aliased table names when using an alias relation');
 
 /*************************************************************/
 /* sfPropelFinder::join($classAndAlias, $start, $end, $type) and subsequent finder method calls */
@@ -527,28 +527,28 @@ $finder = sfPropelFinder::from('Article')->
   where('c.Name', 'cat1')->
   orWhere('c.Name', 'cat2');
 $finder->count();
-$t->is($finder->getLatestQuery(), 'SELECT COUNT(article.ID) FROM article INNER JOIN category c ON (article.CATEGORY_ID=c.ID) WHERE (c.NAME=\'cat1\' OR c.NAME=\'cat2\')', 'join() using an alias allows columns of joined table to be used in orWhere()');
+$t->is($finder->getLatestQuery(), propel_sql('SELECT COUNT([P13*][P12article.ID]) FROM article INNER JOIN category c ON (article.CATEGORY_ID=c.ID) WHERE (c.NAME=\'cat1\' OR c.NAME=\'cat2\')'), 'join() using an alias allows columns of joined table to be used in orWhere()');
 $finder = sfPropelFinder::from('Article')->
   join('Category c', 'Article.CategoryId', 'c.Id', 'INNER JOIN')->
   whereCustom('c.Name = ?', 'cat1');
 $finder->count();
-$t->is($finder->getLatestQuery(), 'SELECT COUNT(article.ID) FROM article INNER JOIN category c ON (article.CATEGORY_ID=c.ID) WHERE c.NAME = \'cat1\'', 'join() using an alias allows columns of joined table to be used in whereCustom()');
+$t->is($finder->getLatestQuery(), propel_sql('SELECT COUNT([P13*][P12article.ID]) FROM article INNER JOIN category c ON (article.CATEGORY_ID=c.ID) WHERE c.NAME = \'cat1\''), 'join() using an alias allows columns of joined table to be used in whereCustom()');
 $finder = sfPropelFinder::from('Article')->
   join('Category c', 'Article.CategoryId', 'c.Id', 'INNER JOIN')->
   where('c.Name', 'cat1')->
   orWhereCustom('c.Name = ?', 'cat2');
 $finder->count();
-$t->is($finder->getLatestQuery(), 'SELECT COUNT(article.ID) FROM article INNER JOIN category c ON (article.CATEGORY_ID=c.ID) WHERE (c.NAME=\'cat1\' OR c.NAME = \'cat2\')', 'join() using an alias allows columns of joined table to be used in orWhereCustom()');
+$t->is($finder->getLatestQuery(), propel_sql('SELECT COUNT([P13*][P12article.ID]) FROM article INNER JOIN category c ON (article.CATEGORY_ID=c.ID) WHERE (c.NAME=\'cat1\' OR c.NAME = \'cat2\')'), 'join() using an alias allows columns of joined table to be used in orWhereCustom()');
 $finder = sfPropelFinder::from('Article')->
   join('Category c', 'Article.CategoryId', 'c.Id', 'INNER JOIN')->
   orderBy('c.Name');
 $finder->find();
-$t->is($finder->getLatestQuery(), 'SELECT article.ID, article.TITLE, article.CATEGORY_ID, UPPER(c.NAME) FROM article INNER JOIN category c ON (article.CATEGORY_ID=c.ID) ORDER BY UPPER(c.NAME) ASC', 'join() using an alias allows columns of joined table to be used in orderBy()');
+$t->is($finder->getLatestQuery(), propel_sql('SELECT article.ID, article.TITLE, article.CATEGORY_ID[P12, UPPER(c.NAME)] FROM article INNER JOIN category c ON (article.CATEGORY_ID=c.ID) ORDER BY [P12UPPER(c.NAME)][P13c.NAME] ASC'), 'join() using an alias allows columns of joined table to be used in orderBy()');
 $finder = sfPropelFinder::from('Article')->
   join('Category c', 'Article.CategoryId', 'c.Id', 'INNER JOIN')->
   groupBy('c.Name');
-$finder->count();
-$t->is($finder->getLatestQuery(), 'SELECT COUNT(article.ID), c.NAME FROM article INNER JOIN category c ON (article.CATEGORY_ID=c.ID) GROUP BY c.NAME', 'join() using an alias allows columns of joined table to be used in groupBy()');
+$finder->find();
+$t->is($finder->getLatestQuery(), 'SELECT article.ID, article.TITLE, article.CATEGORY_ID FROM article INNER JOIN category c ON (article.CATEGORY_ID=c.ID) GROUP BY c.NAME', 'join() using an alias allows columns of joined table to be used in groupBy()');
 
 /***********************************************************************/
 /* sfPropelFinder::join() with multiple foreign keys to the same table */
@@ -579,7 +579,7 @@ $finder = sfPropelFinder::from('House')->
   where('owner.Name', 'John');
 $nbHouses = $finder->count();
 $t->is($nbHouses, 1, 'join() allows to join to another table with several foreign keys using an alias');
-$t->is($finder->getLatestQuery(), 'SELECT COUNT(house.ID) FROM house INNER JOIN human owner ON (house.OWNER_ID=owner.ID) WHERE owner.NAME=\'John\'', 'join() uses aliased table names when using an alias relation');
+$t->is($finder->getLatestQuery(), propel_sql('SELECT COUNT([P13*][P12house.ID]) FROM house INNER JOIN human owner ON (house.OWNER_ID=owner.ID) WHERE owner.NAME=\'John\''), 'join() uses aliased table names when using an alias relation');
 
 /************************************************************/
 /* sfPropelFinder::join() with self-referenced foreign keys */
@@ -601,7 +601,7 @@ $finder = sfPropelFinder::from('Human')->
   where('father.Name', 'John');
 $nbHumans = $finder->count();
 $t->is($nbHumans, 1, 'join() allows to join to the current table using an alias');
-$t->is($finder->getLatestQuery(), 'SELECT COUNT(human.ID) FROM human INNER JOIN human father ON (human.FATHER_ID=father.ID) WHERE father.NAME=\'John\'', 'join() uses aliased table names when using an alias relation');
+$t->is($finder->getLatestQuery(), propel_sql('SELECT COUNT([P13*][P12human.ID]) FROM human INNER JOIN human father ON (human.FATHER_ID=father.ID) WHERE father.NAME=\'John\''), 'join() uses aliased table names when using an alias relation');
 
 /*********************************************************************/
 /* sfPropelFinder::join() with multiple self-referenced foreign keys */
@@ -629,7 +629,7 @@ $finder = sfPropelFinder::from('Human')->
   where('mother.Name', 'Jane');
 $nbHumans = $finder->count();
 $t->is($nbHumans, 1, 'join() allows to join to the current table with several foreign keys using an alias');
-$t->is($finder->getLatestQuery(), 'SELECT COUNT(human.ID) FROM human INNER JOIN human father ON (human.FATHER_ID=father.ID) INNER JOIN human mother ON (human.MOTHER_ID=mother.ID) WHERE (father.NAME=\'John\' AND mother.NAME=\'Jane\')', 'join() uses aliased table names when using an alias relation');
+$t->is($finder->getLatestQuery(), propel_sql('SELECT COUNT([P13*][P12human.ID]) FROM human INNER JOIN human father ON (human.FATHER_ID=father.ID) INNER JOIN human mother ON (human.MOTHER_ID=mother.ID) WHERE (father.NAME=\'John\' AND mother.NAME=\'Jane\')'), 'join() uses aliased table names when using an alias relation');
 
 HumanPeer::doDeleteAll();
 $human1 = new Human();
@@ -650,4 +650,4 @@ $finder = sfPropelFinder::from('Human')->
   where('grandfather.Name', 'John');
 $nbHumans = $finder->count();
 $t->is($nbHumans, 1, 'join() allows to join to the current table with several foreign keys using an alias');
-$t->is($finder->getLatestQuery(), 'SELECT COUNT(human.ID) FROM human INNER JOIN human father ON (human.FATHER_ID=father.ID) INNER JOIN human grandfather ON (father.FATHER_ID=grandfather.ID) WHERE grandfather.NAME=\'John\'', 'join() uses aliased table names when using an alias relation');
+$t->is($finder->getLatestQuery(), propel_sql('SELECT COUNT([P13*][P12human.ID]) FROM human INNER JOIN human father ON (human.FATHER_ID=father.ID) INNER JOIN human grandfather ON (father.FATHER_ID=grandfather.ID) WHERE grandfather.NAME=\'John\''), 'join() uses aliased table names when using an alias relation');

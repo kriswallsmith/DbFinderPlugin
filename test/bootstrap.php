@@ -33,3 +33,17 @@ else
   $databaseManager = new sfDatabaseManager();
   $databaseManager->initialize();
 }
+
+define('PROPEL_VERSION', method_exists('Criteria', 'setPrimaryTableName') ? '1.3' : '1.2');
+function propel_sql($sql)
+{
+  $regs = array('/\[P12(.+?)\]/', '/\[P13(.+?)\]/');
+  if(PROPEL_VERSION == '1.2')
+  {
+    return preg_replace($regs, array('$1', ''), $sql);
+  }
+  else
+  {
+    return preg_replace($regs, array('', '$1'), $sql);
+  }
+}

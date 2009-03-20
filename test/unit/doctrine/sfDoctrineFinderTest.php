@@ -49,7 +49,7 @@ include dirname(__FILE__).'/../../bootstrap.php';
 // cleanup database
 Doctrine_Query::create()->delete()->from('DArticle')->execute();
 
-$t = new lime_test(148, new lime_output_color());
+$t = new lime_test(147, new lime_output_color());
 
 $t->diag('find()');
 
@@ -396,8 +396,6 @@ $article = sfDoctrineFinder::from('DArticle')->where('DArticle.Title', 'abc')->f
 $t->is($article->getId(), $article1->getId(), 'where() accepts a complete column name ClassName.ColumnName');
 $article = sfDoctrineFinder::from('DArticle')->where('DArticle_Title', 'abc')->findOne();
 $t->is($article->getId(), $article1->getId(), 'where() accepts a complete column name ClassName_ColumnName');
-$article = sfDoctrineFinder::from('DArticle')->where('d.Title', 'abc')->findOne();
-$t->is($article->getId(), $article1->getId(), 'where() accepts a complete column name ClassShortcut.ColumnName');
 $article = sfDoctrineFinder::from('DArticle b')->where('b.Title', 'abc')->findOne();
 $t->is($article->getId(), $article1->getId(), 'where() accepts a complete column name ClassAlias.ColumnName');
 $article = sfDoctrineFinder::from('DArticle')->where('Title', 'def')->findOne();

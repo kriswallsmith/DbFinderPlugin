@@ -196,6 +196,10 @@ class sfPropelFinderRelation
       call_user_func(array($baseObject, $methodName), $objectToRelate, $culture);
       call_user_func(array($objectToRelate, 'set'.$this->getFromClass()), $baseObject);
     }
+    else
+    {
+      throw new Exception('Unable to find foreign I18N setter method');
+    }
   }
   
   public function addSelectColumns($c)

@@ -91,7 +91,7 @@ $finder = sfPropelFinder::from('Article')->
   where('CategoryId', 1);
 $pager->setFinder($finder);
 $pager->init();
-$t->is($con->getLastExecutedQuery(), 'SELECT COUNT(article.ID) FROM article WHERE (article.TITLE=\'foo\' AND article.CATEGORY_ID=1)' , 'sfPropelFinderPager::init() issues a COUNT query with the correct WHERE conditions');
+$t->is($con->getLastExecutedQuery(), propel_sql('SELECT COUNT([P13*][P12article.ID]) FROM article WHERE (article.TITLE=\'foo\' AND article.CATEGORY_ID=1)'), 'sfPropelFinderPager::init() issues a COUNT query with the correct WHERE conditions');
 
 $t->diag('sfPropelFinder::paginate()');
 
@@ -120,7 +120,7 @@ $finder = sfPropelFinder::from('Article')->groupBy('Title');
 $pager = new sfPropelFinderPager('Article', 2);
 $pager->setFinder($finder);
 $pager->init();
-$t->is($con->getLastExecutedQuery(), 'SELECT COUNT(article.ID) FROM article', 'sfPropelFinderPager::init() removes groupBy clauses and issues a COUNT');
+$t->is($con->getLastExecutedQuery(), propel_sql('SELECT COUNT([P13*][P12article.ID]) FROM article'), 'sfPropelFinderPager::init() removes groupBy clauses and issues a COUNT');
 $pager->getResults();
 $t->is($con->getLastExecutedQuery(), 'SELECT article.ID, article.TITLE, article.CATEGORY_ID FROM article GROUP BY article.TITLE LIMIT 2', 'sfPropelFinderPager::getResults() does not remove groupBy clauses and issues a SELECT');
 

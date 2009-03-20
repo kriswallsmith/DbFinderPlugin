@@ -21,7 +21,7 @@ class DbFinder extends sfModelFinder
   protected
     $adapter = null,
     $type = null;
-  
+    
   public function __construct($adapter = '')
   {
     if(!$adapter)
@@ -245,6 +245,37 @@ class DbFinder extends sfModelFinder
     return $this;
   }
   
+  /**
+   * Makes the finder return a scalar instead of an object
+   * Examples:
+   *   DbFinder::from('Article')->select('Name')->find();
+   *   => array('Foo', 'Bar')
+   *   DbFinder::from('Article')->select('Name')->findOne();
+   *   => 'Foo'
+   *   DbFinder::from('Article')->select(array('Id', 'Name'))->find();
+   *   => array(
+   *        array('Id' => 1, 'Name' => 'Foo'),
+   *        array('Id' => 2, 'Name' => 'Bar')
+   *      )
+   *   DbFinder::from('Article')->select(array('Id', 'Name'), sfModelFinder::SIMPLE)->find();
+   *   => array(
+   *        array(1, 'Foo'),
+   *        array(2, 'Bar')
+   *      )
+   *   DbFinder::from('Article')->select(array('Id', 'Name'))->findOne();
+   *   => array('Id' => 1, 'Name' => 'Foo')
+   *   DbFinder::from('Article')->select(array('Id', 'Name'), sfModelFinder::SIMPLE)->findOne();
+   *   => array(1, 'Foo')
+   *
+   * @param mixed $columnArray A list of column names (e.g. array('Title', 'Category.Name', 'c.Content')) or a single column name (e.g. 'Name')
+   * @param string $keyType Either sfModelFinder::ASSOCIATIVE or sfModelFinder::SIMPLE. In the latter case, the finder result sets uses numeric index.
+   *
+   * @return     DbFinder the current finder object
+   */
+  public function select($columnArray, $keyType = self::ASSOCIATIVE)
+  {
+    return $this->adapter->select($columnArray, $keyType);
+  }
   
   // Finder executers
   

@@ -106,13 +106,6 @@ Usage
     $articles = DbFinder::from('Article')->
       where('Article.Title', 'foo')->
       find();
-    // You can also use the magic whereXXX() method, removing the column argument and concatenating it to the method name
-    $articles = DbFinder::from('Article')->
-      whereTitle('foo')->
-      find();
-      
-    // Or, when your search is on a single column, use the magic findByXXX() method
-    $articles = DbFinder::from('Article')->findByTitle('foo');
 
 ### Using functions in a WHERE clause
 
@@ -155,10 +148,6 @@ Usage
     // Finding all Articles ordered by created_at desc
     $articles = DbFinder::from('Article')->
       orderBy('CreatedAt', 'desc')->
-      find();
-    // You can also use the magic orderByXXX() method
-    $articles = DbFinder::from('Article')->
-      orderByCreatedAt()->
       find();
 
 ### Chaining methods
@@ -278,12 +267,6 @@ Compare it to the code required to get these `Comment` objects without `DbFinder
     // So you can omit it
     $article = DbFinder::from('Article')->
       join('Comment')->
-      where('Author.Name', 'John')->
-      findOne();
-    
-    // You can also use the magic joinXXX() method
-    $article = DbFinder::from('Article')->
-      joinComment()->
       where('Author.Name', 'John')->
       findOne();
     
@@ -556,6 +539,150 @@ Warning: The `withColumn()` feature requires symfony's Behavior system. It will 
       set(array('Title' => 'updated title'), true);
     // Beware that it may take a long time
 
+### Finding Objects From A Primary Key
+
+    [php]
+    $article = DbFinder::from('Article')->findPk(123);
+    // is equivalent to
+    $article = ArticlePeer::retrieveByPk(123);
+
+    // But it's longer to write so what's the point?
+    // You can hydrate related objects by using with()
+    // So you need a single query to retrieve an object and its related objects
+    $article = DbFinder::from('Article')->
+      with('Category', 'I18n')->
+      findPk(123);
+
+    // Also works for objects with composite primary keys
+    $articleI18n = DbFinder::from('ArticleI18n')->findPk(array(123, 'fr'));
+
+### Getting columns instead of objects
+
+    [php]
+    // When you only need a few columns, it is faster to skip object hydration
+    // In such cases, call select() before find()
+    $articles = DbFinder::from('Article')->
+      join('Category')->
+      select(array('Id', 'Title', 'Content', 'Category.Name'))->
+      find();
+    // returns array(
+        array('Id' => 123, 'Title' => 'foo', 'Content' => 'This is foo', 'Category.Name' => 'Miscellaneous'),
+        array('Id' => 456, 'Title' => 'bar', 'Content' => 'This is bar', 'Category.Name' => 'Main')
+      )
+    
+    // If you prefer a flat array to an associative array,
+    // pass sfModelFinder::SIMPLE as second argument to the select call
+    $articles = DbFinder::from('Article')->
+      join('Category')->
+      select(array('Id', 'Title', 'Content', 'Category.Name'), sfModelFinder::SIMPLE)->
+      find();
+    // returns array(
+        array('123, 'foo', 'This is foo', 'Miscellaneous'),
+        array(456, 'bar', 'This is bar', 'Main')
+      )
+    
+    // When you need only one record, use select() with findOne()
+    $articles = DbFinder::from('Article')->
+      join('Category')->
+      select(array('Id', 'Title', 'Content', 'Category.Name'))->
+      findOne();
+    // returns array('Id' => 123, 'Title' => 'foo', 'Content' => 'This is foo', 'Category.Name' => 'Miscellaneous')
+    
+    // When you need only one column, use pass a column name to select()
+    $articleTitles = DbFinder::from('Article')->
+      join('Category')->
+      select('Title')->
+      find();
+    // returns array('foo', 'bar')
+    
+    // When you need only one column from one record, use select() and findOne()
+    $articleTitle = DbFinder::from('Article')->
+      join('Category')->
+      select('Title')->
+      findOne();
+    // returns 'foo'
+    
+    // select() accepts calculated columns
+    $nbComments = DbFinder::from('Article')->
+      join('Comment')->
+      withColumn('count(Comment.ID)', 'nbComments')->
+      groupBy('Article.Id')->
+      select(array('Article.Title', 'nbComments'), sfModelFinder::SIMPLE)->
+      find()
+    // returns array(
+      array('foo', 25),
+      array('bar', 32)
+    )
+    
+    // When you wan to select all the columns from the main class, use select('*')
+    $articles = DbFinder::from('Article')->
+      select('*')->
+      find();
+    // returns array(
+        array('Id' => 123, 'Title' => 'foo', 'Content' => 'This is foo'),
+        array('Id' => 456, 'Title' => 'bar', 'Content' => 'This is bar')
+      )
+    
+### Magic finder methods
+
+The finder recognizes method calls composed of `where`/`join`/`orderBy`, and a class / column name. It then forwards the method call to the related method, adding the class/column name as a first argument.
+
+    [php]
+    DbFinder::from('Article')->whereTitle('foo')->find();
+    // same as
+    DbFinder::from('Article')->where('Title', 'foo')->find();
+
+    DbFinder::from('Article')->orderByCreatedAt()->find();
+    // same as
+    DbFinder::from('Article')->orderBy('CreatedAt')->find();
+
+    DbFinder::from('Article')->joinComment()->whereComment_Title('Hey')->      findOne();
+    // same as
+    DbFinder::from('Article')->join('Comment')->where('Comment.Title', 'Hey')->      findOne();
+
+The most useful magic methods are `findByXXX()` and `findOneByXXX()`.
+
+    [php]
+    DbFinder::from('Article')->findByTitle('foo');
+    // same as
+    DbFinder::from('Article')->where('Title', 'foo')->find();
+
+    DbFinder::from('Article')->findOneByTitle('foo');
+    // same as
+    DbFinder::from('Article')->where('Title', 'foo')->findOne();
+    
+### Using Conditional Methods
+
+    [php]
+    // Finding articles authored by the current user if connected, or all articles otherwise
+    $articles = DbFinder::from('Article')->
+      _if($user->isAuthenticated())->
+        where('AuthorId', $user->getId())->
+      _endif()->
+      orderBy('CreatedAt')->
+      find();
+    // Same as
+    $finder = DbFinder::from('Article');
+    if($user->isAuthenticated())
+    {
+      $finder->where('AuthorId', $user->getId());
+    }
+    $articles = $finder->
+      orderBy('CreatedAt')->
+      find();
+    // Available condtional methods are _if(), _elseif(), _else(), and _endif()
+
+### Using Class Shortcuts
+
+    [php]
+    $article = DbFinder::from('Article a')->
+      where('a.Title', 'foo')->
+      findOne();
+    // same as
+    $article = DbFinder::from('Article')->
+      where('Article.Title', 'foo')->
+      findOne();
+
 ### Writing your own business logic into a finder
 
 You can create a new finder for your objects, with custom methods. The only prerequisites are to extend `DbFinder`, and to define a protected `$class` property.
@@ -603,55 +730,6 @@ You can create several custom finders for a given model, in order to separate th
     $article = DbFinder::from('frontendArticle')->find();
 
 **Tip**: Being able to use any class as a finder means that you can use the finder API to query model objects that are not backed by any ORM at all.
-
-### Finding Objects From A Primary Key
-
-    [php]
-    $article = DbFinder::from('Article')->findPk(123);
-    // is equivalent to
-    $article = ArticlePeer::retrieveByPk(123);
-
-    // But it's longer to write so what's the point?
-    // You can hydrate related objects by using with()
-    // So you need a single query to retrieve an object and its related objects
-    $article = DbFinder::from('Article')->
-      with('Category', 'I18n')->
-      findPk(123);
-
-    // Also works for objects with composite primary keys
-    $articleI18n = DbFinder::from('ArticleI18n')->findPk(array(123, 'fr'));
-
-### Using Conditional Methods
-
-    [php]
-    // Finding articles authored by the current user if connected, or all articles otherwise
-    $articles = DbFinder::from('Article')->
-      _if($user->isAuthenticated())->
-        where('AuthorId', $user->getId())->
-      _endif()->
-      orderBy('CreatedAt')->
-      find();
-    // Same as
-    $finder = DbFinder::from('Article');
-    if($user->isAuthenticated())
-    {
-      $finder->where('AuthorId', $user->getId());
-    }
-    $articles = $finder->
-      orderBy('CreatedAt')->
-      find();
-    // Available condtional methods are _if(), _elseif(), _else(), and _endif()
-
-### Using Class Shortcuts
-
-    [php]
-    $article = DbFinder::from('Article a')->
-      where('a.Title', 'foo')->
-      findOne();
-    // same as
-    $article = DbFinder::from('Article')->
-      where('Article.Title', 'foo')->
-      findOne();
 
 ### Using Cache
 
@@ -732,8 +810,9 @@ TODO / Ideas
 Changelog
 ---------
 
-### 2009-03-13 | Trunk
+### 2009-03-20 | Trunk
 
+* francois: Added `sfPropelFinder::select()` (based on a patch by Benjamin Runnels)
 * francois: Improved performance when using `sfPropelFinder::with()` and `sfPropelFinder::withI18n()`
 * francois: Added support for aliases in `sfPropelFinder::with()`, and `sfPropelFinder::withColumn()`
 * francois: Added support for aliases in `sfPropelFinder::join()`

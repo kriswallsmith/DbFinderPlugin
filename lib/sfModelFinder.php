@@ -15,6 +15,10 @@ abstract class sfModelFinder
     $class = '',
     $relations = array();
   
+  const 
+    SIMPLE = 'FETCH_NUM',
+    ASSOCIATIVE = 'FETCH_ASSOC';
+  
   public function __construct($class = '', $connection = null)
   {
     $this->connection = $connection;
@@ -56,6 +60,10 @@ abstract class sfModelFinder
   abstract public function setConnection($connection);
   abstract public function getQueryObject();
   abstract public function setQueryObject($query);
+  
+  // Finder output
+  
+  abstract public function select($columnArray, $keyType = self::ASSOCIATIVE);
   
   // Finder executers
   
@@ -235,6 +243,19 @@ abstract class sfModelFinder
     $res .= "</table>\n";
     
     return $res;
+  }
+  
+  protected static function getClassAndAlias($class)
+  {
+    if(strpos($class, ' ') !== false)
+    {
+      list($class, $alias) = explode(' ', $class);
+    }
+    else
+    {
+      $alias = null;
+    }
+    return array($class, $alias);
   }
   
   protected static function getValueAndComparisonFromArguments($arguments = array())

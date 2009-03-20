@@ -183,7 +183,7 @@ class sfDoctrineFinder extends sfModelFinder
   
   protected function addAlias($class, $alias = '')
   {
-    if(!$alias) list($class, $alias) = $this->getClassAndAlias($class);
+    if(!$alias) list($class, $alias) = $this->getClassAndAliasForDoctrine($class);
     $this->aliases[$class] = $alias;
   }
   
@@ -394,6 +394,13 @@ class sfDoctrineFinder extends sfModelFinder
     $this->withColumns = array();
     
     return $this;
+  }
+  
+  // Finder output
+  
+  public function select($columnArray, $keyType = self::ASSOCIATIVE)
+  {
+    throw new Exception('This method is not yet implemented');
   }
   
   // Finder Executers
@@ -742,7 +749,7 @@ class sfDoctrineFinder extends sfModelFinder
       }
       else
       {
-        list($relatedClass, $alias, $isTrueAlias) = $this->getClassAndAlias($class);
+        list($relatedClass, $alias, $isTrueAlias) = $this->getClassAndAliasForDoctrine($class);
         $this->addWithClass($relatedClass);
       }
     }
@@ -1302,7 +1309,7 @@ class sfDoctrineFinder extends sfModelFinder
       case 2:
         // $articleFinder->join('Comment')
         // $articleFinder->join('Category', 'RIGHT JOIN')
-        list($relatedClass, $alias, $isTrueAlias) = $this->getClassAndAlias($args[0]);
+        list($relatedClass, $alias, $isTrueAlias) = $this->getClassAndAliasForDoctrine($args[0]);
         $relation = $this->findRelation($relatedClass);
         $operator = isset($args[1]) ? trim(str_replace('join', '', strtolower($args[1]))) : 'inner';
         break;
@@ -1473,7 +1480,7 @@ class sfDoctrineFinder extends sfModelFinder
     throw new Exception(sprintf('Cannot determine relation between %s and %s', $col1, $col2));
   }
   
-  protected function getClassAndAlias($class)
+  protected function getClassAndAliasForDoctrine($class)
   {
     if(strpos($class, ' ') !== false)
     {

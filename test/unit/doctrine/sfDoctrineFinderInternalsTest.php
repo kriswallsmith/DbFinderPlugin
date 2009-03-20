@@ -48,11 +48,11 @@ class myFinder extends sfDoctrineFinder
   }
 }
 $finder = new myFinder('DArticle');
-$t->is($finder->getColName('Title'), 'd.title', 'getColName() recognizes [column phpName]');
-$t->is($finder->getColName('DArticle_Title'), 'd.title', 'getColName() recognizes [table phpName]_[column phpName]');
-$t->is($finder->getColName('DArticle.Title'), 'd.title', 'getColName() recognizes [table phpName].[column phpName]');
-$t->is($finder->getColName('DArticle.CategoryId'), 'd.category_id', 'getColName() expects column names in CamelCase');
-$t->is($finder->getColName('DArticle.categoryId'), 'd.category_id', 'getColName() is tolerant over the first letter capitalization');
+$t->is($finder->getColName('Title'), 'DArticle.title', 'getColName() recognizes [column phpName]');
+$t->is($finder->getColName('DArticle_Title'), 'DArticle.title', 'getColName() recognizes [table phpName]_[column phpName]');
+$t->is($finder->getColName('DArticle.Title'), 'DArticle.title', 'getColName() recognizes [table phpName].[column phpName]');
+$t->is($finder->getColName('DArticle.CategoryId'), 'DArticle.category_id', 'getColName() expects column names in CamelCase');
+$t->is($finder->getColName('DArticle.categoryId'), 'DArticle.category_id', 'getColName() is tolerant over the first letter capitalization');
 $t->is($finder->getColName('d.Title'), 'd.title', 'getColName() recognizes [table alias].[column phpName]');
 
 $finder = new myFinder('DArticle b');

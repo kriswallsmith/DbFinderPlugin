@@ -40,7 +40,7 @@ include dirname(__FILE__).'/../../bootstrap.php';
 CommentPeer::doDeleteAll();
 ArticlePeer::doDeleteAll();
 
-$t = new lime_test(145, new lime_output_color());
+$t = new lime_test(146, new lime_output_color());
 
 $t->diag('find()');
 
@@ -954,7 +954,7 @@ $article2->save();
 
 $finder = sfPropelFinder::from('Article');
 $t->is($finder->set(array('Title' => 'updated title')), 2, 'set() returns the number of updated rows');
-$t->is($finder->getLatestQuery(), 'UPDATE article SET TITLE = \'updated title\' WHERE 1=1', 'set() issues an update query even when passed an empty finder');
+$t->is($finder->getLatestQuery(), propel_sql('UPDATE article SET TITLE[P12 ]=[P12 ]\'updated title\' WHERE 1=1'), 'set() issues an update query even when passed an empty finder');
 $t->is(sfPropelFinder::from('Article')->where('Title', 'updated title')->count(), 2, 'set() updates all records when passed an empty finder');
 
 ArticlePeer::doDeleteAll();
@@ -968,7 +968,7 @@ $article2->save();
 
 $finder = sfPropelFinder::from('Article')->where('Title', 'foo');
 $t->is($finder->set(array('Title' => 'updated title')), 1, 'set() returns the number of updated rows');
-$t->is($finder->getLatestQuery(), 'UPDATE article SET TITLE = \'updated title\' WHERE article.TITLE=\'foo\'', 'set() issues an Update query when passed a finder');
+$t->is($finder->getLatestQuery(), propel_sql('UPDATE article SET TITLE[P12 ]=[P12 ]\'updated title\' WHERE article.TITLE=\'foo\''), 'set() issues an Update query when passed a finder');
 $t->is(sfPropelFinder::from('Article')->where('Title', 'updated title')->count(), 1, 'set() updates only the records found based on the array of values');
 
 $finder = sfPropelFinder::from('Article')->where('Title', 'bar');
@@ -985,6 +985,15 @@ catch( Exception $e )
 {
   $t->pass('set() throws an exception when called on a finder with join()');
 }
+
+$t->diag('Table alias');
+
+ArticlePeer::doDeleteAll();
+$article1 = new Article();
+$article1->setTitle('abc');
+$article1->save();
+$article = sfPropelFinder::from('Article a')->where('a.Title', 'abc')->findOne();
+$t->is($article->getId(), $article1->getId(), 'from() accepts a table alias');
 
 $t->diag('Debugging functions');
 

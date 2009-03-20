@@ -259,14 +259,14 @@ $t->is($comment->getAuthor()->getName(), 'John', 'you can add several join() sta
 $t->diag('leftJoin(), rightJoin(), innerJoin()');
 
 $finder = sfDoctrineFinder::from('DArticle')->leftJoin('DComment');
-$t->is($finder->getQueryObject()->getDQL(), 'SELECT d.* FROM DArticle d LEFT JOIN d.DComment d1', 'leftJoin($table) ends up in a left join');
+$t->is($finder->getQueryObject()->getDQL(), 'SELECT DArticle.* FROM DArticle  LEFT JOIN DArticle.DComment d', 'leftJoin($table) ends up in a left join');
 //$finder = sfDoctrineFinder::from('DArticle')->innerJoin('DComment');
 $t->skip('rightJoin($table) ends up in a right join');
 $finder = sfDoctrineFinder::from('DArticle')->innerJoin('DComment');
-$t->is($finder->getQueryObject()->getDQL(), 'SELECT d.* FROM DArticle d INNER JOIN d.DComment d1', 'innerJoin($table) ends up in an inner join');
+$t->is($finder->getQueryObject()->getDQL(), 'SELECT DArticle.* FROM DArticle  INNER JOIN DArticle.DComment d', 'innerJoin($table) ends up in an inner join');
 
 $finder = sfDoctrineFinder::from('DArticle')->leftJoin('DArticle.Id', 'DComment.ArticleId');
-$t->is($finder->getQueryObject()->getDQL(), 'SELECT d.* FROM DArticle d LEFT JOIN d.DComment ', 'leftJoin($start, $end) creates left join');
+$t->is($finder->getQueryObject()->getDQL(), 'SELECT DArticle.* FROM DArticle  LEFT JOIN DArticle.DComment ', 'leftJoin($start, $end) creates left join');
 
 $t->diag('with()');
 

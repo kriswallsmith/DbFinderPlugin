@@ -49,11 +49,6 @@ class testFinder extends sfModelFinder
     return $this->test;
   }
   
-  public function getClassAndAlias($class)
-  {
-    return $class;
-  }
-  
   // Finder accessors
   
   public function getClass() {}
@@ -62,6 +57,10 @@ class testFinder extends sfModelFinder
   public function setConnection($connection) {}
   public function getQueryObject() {}
   public function setQueryObject($query) {}
+  
+  // Finder output
+  
+  public function select($columnArray, $keyType = self::ASSOCIATIVE) {}
   
   // Finder executers
   

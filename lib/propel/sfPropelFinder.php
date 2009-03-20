@@ -26,7 +26,9 @@ class sfPropelFinder extends sfModelFinder
     $withClasses     = array(),
     $withColumns     = array(),
     $culture         = null,
-    $cache           = null;
+    $cache           = null,
+    $findColumns     = false,
+    $select          = null;
   
   public function getClass()
   {
@@ -135,14 +137,7 @@ class sfPropelFinder extends sfModelFinder
    */
   public static function fromClass($class, $connection = null)
   {
-    if(strpos($class, ' ') !== false)
-    {
-      list($realClass, $alias) = explode(' ', $class);
-    }
-    else
-    {
-      $realClass = $class;
-    }
+    list($realClass, $alias) = self::getClassAndAlias($class);
     if(class_exists($realClass))
     {
       $tmp = new $realClass;
@@ -294,6 +289,54 @@ class sfPropelFinder extends sfModelFinder
     return $this;
   }
   
+  /**
+   * Makes the finder return a scalar instead of an object
+   * Examples:
+   *   sfPropelFinder::from('Article')->select('Name')->find();
+   *   => array('Foo', 'Bar')
+   *   sfPropelFinder::from('Article')->select('Name')->findOne();
+   *   => 'Foo'
+   *   sfPropelFinder::from('Article')->select(array('Id', 'Name'))->find();
+   *   => array(
+   *        array('Id' => 1, 'Name' => 'Foo'),
+   *        array('Id' => 2, 'Name' => 'Bar')
+   *      )
+   *   sfPropelFinder::from('Article')->select(array('Id', 'Name'), sfModelFinder::SIMPLE)->find();
+   *   => array(
+   *        array(1, 'Foo'),
+   *        array(2, 'Bar')
+   *      )
+   *   sfPropelFinder::from('Article')->select(array('Id', 'Name'))->findOne();
+   *   => array('Id' => 1, 'Name' => 'Foo')
+   *   sfPropelFinder::from('Article')->select(array('Id', 'Name'), sfModelFinder::SIMPLE)->findOne();
+   *   => array(1, 'Foo')
+   *
+   * @param mixed $columnArray A list of column names (e.g. array('Title', 'Category.Name', 'c.Content')) or a single column name (e.g. 'Name')
+   * @param string $keyType Either sfModelFinder::ASSOCIATIVE or sfModelFinder::SIMPLE. In the latter case, the finder result sets uses numeric index.
+   *
+   * @return     sfPropelFinder the current finder object
+   */
+  public function select($columnArray, $keyType = self::ASSOCIATIVE)
+  {
+    if(!$columnArray)
+    {
+      throw new Exception('You must ask for at least one column');
+    }
+    if ($columnArray == '*')
+    {
+      $columnArray = array();
+      foreach (call_user_func(array($this->peerClass, 'getFieldNames'), BasePeer::TYPE_PHPNAME) as $column)
+      {
+        $columnArray[]= $this->class.'.'.$column;
+      }
+    }
+    
+    $this->select = $columnArray;
+    $this->keyType = $keyType;
+    
+    return $this;
+  }
+  
   // Finder Executers
   
   /**
@@ -337,7 +380,7 @@ class sfPropelFinder extends sfModelFinder
     {
       $this->criteria->setLimit($limit);
     }
-    $ret = $this->doFind();
+    $ret = is_null($this->select) ? $this->doFind() : $this->doFindArray();
     $this->cleanup();
     
     return $ret;
@@ -352,10 +395,11 @@ class sfPropelFinder extends sfModelFinder
   public function findOne()
   {
     $this->criteria->setLimit(1);
-    $ret = $this->doFind();
+    $ret = is_null($this->select) ? $this->doFind() : $this->doFindArray();
+    $ret = isset($ret[0]) ? $ret[0] : (is_array($this->select) ? array() : null);
     $this->cleanup();
     
-    return isset($ret[0]) ? $ret[0] : null;
+    return $ret;
   }
   
   /**
@@ -623,12 +667,13 @@ class sfPropelFinder extends sfModelFinder
       $this->reinitWithClasses();
       $this->reinitWithColumns();
       $this->relations = null;
+      $this->select = null;
     }
     $this->updateLatestQuery();
     
     return $this;
   }
-  
+    
   /**
    * Finalizes the query, executes it and hydrates results
    * 
@@ -788,6 +833,109 @@ class sfPropelFinder extends sfModelFinder
     return $objects;
   }
   
+  protected function doFindArray()
+  {
+    if($cache = $this->cache)
+    {
+      $key = $this->getUniqueIdentifier();
+      $ret = $cache->getIfSet($key);
+      if($ret !== false)
+      {
+        return $ret;
+      }
+    }
+    
+    // Add requested columns which are not withColumns
+    $columnNames = is_array($this->select) ? $this->select : array($this->select);
+    $colNames = array();
+    foreach ($columnNames as $column)
+    {
+      // check if the column was added by a withColumn, if not add it
+      if(!array_key_exists($column, $this->getWithColumns()))
+      {
+        $this->withColumn($column);
+      }
+    }
+    
+    // build criteria
+    $criteria = $this->buildCriteria();
+    $c = clone $criteria;
+    $c->clearSelectColumns();
+    $this->addWithColumnsToCriteria($c);
+
+    if(method_exists($c, 'setPrimaryTableName'))
+    {
+      $propelVersion = '1.3';
+      $nextFunction = 'fetch';
+      $c->setPrimaryTableName(constant($this->peerClass.'::TABLE_NAME'));
+    }
+    else
+    {
+      $propelVersion = '1.2';
+      $nextFunction = 'next';
+    }
+    
+    if($propelVersion == '1.2')
+    {
+      // The criteria has only aliased columns, and BasePeer does not like that
+      // So we add the first column of the main class
+      $cols = call_user_func(array($this->peerClass, 'getFieldNames'), BasePeer::TYPE_COLNAME);
+      $c->addSelectColumn($cols[0]);
+    }
+    
+    // execute the SQL query
+    $c->setDbName(constant($this->peerClass.'::DATABASE_NAME'));
+    $resultSet = BasePeer::doSelect($c, $this->getConnection());
+    
+    // Parse the resultset
+    if($propelVersion == '1.2')
+    {
+      $resultSet->setFetchmode(ResultSet::FETCHMODE_ASSOC);
+    }
+    else
+    {
+      $resultSet->setFetchmode(PDO::FETCH_ASSOC);
+    }
+    $columns = array();
+    while ($row = $resultSet->$nextFunction())
+    {
+      if ($propelVersion == '1.2')
+      {
+        $row = $resultSet->getRow();
+      }
+      if (is_array($this->select))
+      {
+        $finalRow = array();
+        foreach($row as $key => $value)
+        {
+          if(array_key_exists($key, $this->withColumns))
+          {
+            if($this->keyType == self::ASSOCIATIVE)
+            {
+              $finalRow[$key] = $value;
+            }
+            else
+            {
+              $finalRow[] = $value;
+            }
+          }
+        }
+      }
+      else
+      {
+        $finalRow = $row[$this->select];
+      }
+      $columns[] = $finalRow;
+    }
+
+    if($cache)
+    {
+      $cache->set($key, $columns);
+    }
+
+    return $columns;
+  }
+  
   /**
    * Adds missing Joins from with()
    */
@@ -820,6 +968,13 @@ class sfPropelFinder extends sfModelFinder
       $this->relations[$className]->addSelectColumns($c); 
     }
     // Step 3: Add the columns added one by one by way of 'withColumn'
+    $this->addWithColumnsToCriteria($c);
+    
+    return $c;
+  }
+  
+  protected function addWithColumnsToCriteria($c)
+  {
     foreach($this->getWithColumns() as $alias => $column)
     {
       if(strpos($alias, '.') !== false)
@@ -829,7 +984,6 @@ class sfPropelFinder extends sfModelFinder
       }
       $c->addAsColumn($alias, $column['column']);
     }
-    
     return $c;
   }
   
@@ -1420,7 +1574,7 @@ class sfPropelFinder extends sfModelFinder
         // $articleFinder->join('Comment co')
         // $articleFinder->join('Category', 'RIGHT JOIN')
         // $articleFinder->join('Category ca', 'RIGHT JOIN')
-        list($class, $alias) = $this->getClassAndAlias($args[0]);
+        list($class, $alias) = self::getClassAndAlias($args[0]);
         $relation = $this->getRelations()->addRelationFromClass($class, $alias);
         if(!$relation)
         {
@@ -1453,7 +1607,7 @@ class sfPropelFinder extends sfModelFinder
         list($classAndAlias, $column1, $column2, $operator) = $args;
         list($peerClass1, $column1) = $this->getColName($column1, $peerClass = null, $withPeerClass = true, $autoAddJoin = false);
         $class1 = sfPropelFinderUtils::getClassFromPeerClass($peerClass1);
-        list($class2, $alias) = $this->getClassAndAlias($classAndAlias);
+        list($class2, $alias) = self::getClassAndAlias($classAndAlias);
         list($alias2, $phpName2) = explode('.', $column2);
         if($alias != $alias2)
         {
@@ -1621,19 +1775,6 @@ class sfPropelFinder extends sfModelFinder
     return $c;
   }
   
-  protected function getClassAndAlias($class)
-  {
-    if(strpos($class, ' ') !== false)
-    {
-      list($class, $alias) = explode(' ', $class);
-    }
-    else
-    {
-      $alias = null;
-    }
-    return array($class, $alias);
-  }
-  
   protected function getColName($phpName, $peerClass = null, $withPeerClass = false, $autoAddJoin = true)
   {
     if(array_key_exists($phpName, $this->withColumns))
@@ -1658,6 +1799,10 @@ class sfPropelFinder extends sfModelFinder
           // Relation with an alias
           return sfPropelFinderUtils::getColNameUsingAlias($class, $phpName, $toClass, $withPeerClass);
         }
+      }
+      elseif($class == $this->alias)
+      {
+        $class = $this->class;
       }
       else
       {
