@@ -87,7 +87,7 @@ Usage
       find();
     // Finding all Articles with no category
     $articles = DbFinder::from('Article')->
-      where('CategoryId', 'is not null', null)->
+      where('CategoryId', 'is not null')->
       find();
 
     // You can chain WHERE clauses
@@ -126,14 +126,14 @@ Usage
 
     // Finding all Articles where PublishedAt is null AND upper(title) = 'FOO'
     $articles = DbFinder::from('Article')->
-      where('PublishedAt', 'is null', null)->
+      where('PublishedAt', 'is null')->
       whereCustom('upper(Article.Title) = ?', 'FOO')->
       find();
     // whereCustom() adds a condition with 'AND'
     
     // Finding all Articles where PublishedAt is null OR upper(title) = 'FOO'
     $articles = DbFinder::from('Article')->
-      where('PublishedAt', 'is null', null)->
+      where('PublishedAt', 'is null')->
       orWhereCustom('upper(Article.Title) = ?', 'FOO')->
       find();
     // orWhereCustom() adds a condition with 'OR'
@@ -812,6 +812,7 @@ Changelog
 
 ### 2009-03-20 | Trunk
 
+* francois: Simplified the use of 'is null' and 'is not null' operators
 * francois: Added `sfPropelFinder::select()` (based on a patch by Benjamin Runnels)
 * francois: Improved performance when using `sfPropelFinder::with()` and `sfPropelFinder::withI18n()`
 * francois: Added support for aliases in `sfPropelFinder::with()`, and `sfPropelFinder::withColumn()`

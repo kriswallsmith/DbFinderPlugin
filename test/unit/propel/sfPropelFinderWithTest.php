@@ -65,7 +65,7 @@ Beware that the tables for these models will be emptied by the tests, so use a t
 
 include dirname(__FILE__).'/../../bootstrap.php';
 
-$t = new lime_test(86, new lime_output_color());
+$t = new lime_test(88, new lime_output_color());
 
 /**************************/
 /* sfPropelFinder::with() */
@@ -353,6 +353,10 @@ $finder = sfPropelFinder::from('Article')->
 $article = $finder->findOne();
 $t->is($finder->getLatestQuery(), $query, 'with(\'i18n\') is a synonym for withI18n()');
 
+/********************************/
+/* sfPropelFinder::withColumn() */
+/********************************/
+
 $t->diag('withColumn()');
 
 ArticlePeer::doDeleteAll();
@@ -588,4 +592,23 @@ $t->is(Propel::getConnection()->getLastExecutedQuery(), $latestQuery, 'Related h
 $t->isnt($comments[1]->getAuthor(), null, 'Second object has an author');
 $t->is(Propel::getConnection()->getLastExecutedQuery(), $latestQuery, 'Related hydration occurred correctly');
 $t->isnt($comments[1]->getArticle(), null, 'Second object has an article');
+$t->is(Propel::getConnection()->getLastExecutedQuery(), $latestQuery, 'Related hydration occurred correctly');
+
+$t->diag('sfPropelFinder::with() and exotic phpNames');
+
+CivilityPeer::doDeleteAll();
+HumanPeer::doDeleteAll();
+$civility1 = new Civility();
+$civility1->setIsMan(true);
+$civility1->save();
+$person1 = new Person();
+$person1->setName('John');
+$person1->setCivility($civility1);
+$person1->save();
+
+$finder = sfPropelFinder::from('Person')->
+  with('Civility');
+$person = $finder->findOne();
+$latestQuery = $finder->getLatestQuery();
+$t->is($person->getCivility()->getIsMan(), true, 'Related Objects with a non-natural phpName get hydrated correctly');
 $t->is(Propel::getConnection()->getLastExecutedQuery(), $latestQuery, 'Related hydration occurred correctly');

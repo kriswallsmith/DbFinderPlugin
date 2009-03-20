@@ -40,7 +40,7 @@ include dirname(__FILE__).'/../../bootstrap.php';
 CommentPeer::doDeleteAll();
 ArticlePeer::doDeleteAll();
 
-$t = new lime_test(146, new lime_output_color());
+$t = new lime_test(148, new lime_output_color());
 
 $t->diag('find()');
 
@@ -381,6 +381,10 @@ $articles = sfPropelFinder::from('Article')->where('Title', 'like', '%bc')->find
 $t->is(count($articles), 2, 'where() accepts a text comparator and is permissive on syntax');
 $articles = sfPropelFinder::from('Article')->where('Title', 'is not null', null)->find();
 $t->is(count($articles), 3, 'where() accepts a text comparator and is permissive on syntax');
+$articles = sfPropelFinder::from('Article')->where('Title', 'is not null')->find();
+$t->is(count($articles), 3, 'where() accepts "is not null" as a value and transforms it into an operator');
+$articles = sfPropelFinder::from('Article')->where('Title', 'is null')->find();
+$t->is(count($articles), 0, 'where() accepts "is null" as a value and transforms it into an operator');
 $articles = sfPropelFinder::from('Article')->where('Title', 'in', array('abc', 'def'))->find();
 $t->is(count($articles), 2, 'where() accepts a "in" comparator');
 $articles = sfPropelFinder::from('Article')->where('Title', 'not in', array('abc', 'def'))->find();

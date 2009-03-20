@@ -268,6 +268,12 @@ abstract class sfModelFinder
         break;
       case 1:
         $value = array_shift($arguments);
+        $comparisonUp = trim(strtoupper($value));
+        if(in_array($comparisonUp, array('IS NULL', 'IS NOT NULL')))
+        {
+          $comparison = ' '.$comparisonUp.' ';
+          $value = null;
+        }
         break;
       case 2:
         $comparison = array_shift($arguments);
