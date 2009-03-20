@@ -56,7 +56,7 @@ Installation
 Usage
 -----
 
-### Finding objects
+### Finding Objects
 
     [php]
     // Finding all Articles
@@ -68,9 +68,7 @@ Usage
     // Finding the last Article (the finder will figure out the column to use for sorting)
     $article = DbFinder::from('Article')->findLast();
 
-**Tip**: When developing with the finder, you may prefer to have an array or string representation of the results rather than an array of objects. The finder objects provides three methods (`toArray()`, `toString()` and `toHtml()`) that internally execute a `find()` and return something that you can output in your response.
-
-### Adding WHERE clause
+### Adding A WHERE Clause
 
     [php]
     // Finding all Articles where title = 'foo'
@@ -107,7 +105,7 @@ Usage
       where('Article.Title', 'foo')->
       find();
 
-### Using functions in a WHERE clause
+### Using Functions In A WHERE Clause
 
     [php]
     // When you need to apply a function, use whereCustom() instead of where()
@@ -138,7 +136,7 @@ Usage
       find();
     // orWhereCustom() adds a condition with 'OR'
     
-### Ordering results
+### Ordering Results
 
     [php]
     // Finding all Articles ordered by created_at (ascending order by default)
@@ -150,7 +148,7 @@ Usage
       orderBy('CreatedAt', 'desc')->
       find();
 
-### Chaining methods
+### Chaining Methods
 
 The methods of the `DbFinder` object return the current finder object, so you can chain them together in a single call, and finish by any of the `find()` methods to launch the query.
 
@@ -166,7 +164,7 @@ The methods of the `DbFinder` object return the current finder object, so you ca
 
 The syntax should remind you of `sfFinder` and `sfTestBrowser`.
 
-### Finding records related to another one
+### Finding Records Related To Another One
 
     [php]
     // Propel way
@@ -270,7 +268,7 @@ Compare it to the code required to get these `Comment` objects without `DbFinder
       where('Author.Name', 'John')->
       findOne();
     
-### Table aliases
+### Table Aliases
 
     [php]
     // from() allows you to define table aliases
@@ -304,7 +302,7 @@ Compare it to the code required to get these `Comment` objects without `DbFinder
       where('renter.Name', 'Mr Black')->
       find();
     
-### Complex logic
+### Complex Logic
 
     [php]
     // where() and orWhere() only allow simple logical operations on a single condition
@@ -352,7 +350,7 @@ Compare it to the code required to get these `Comment` objects without `DbFinder
       findOne();
     // SELECT article.* FROM article WHERE (UPPER(article.TITLE) = 'foo' OR UPPER(article.TITLE) = 'bar');
 
-### Minimizing queries
+### Minimizing Queries
 
 Even if you do a Join, Propel or Doctrine will issue new queries when you fetch related objects:
 
@@ -430,7 +428,7 @@ The `with()` method can also hydrate the related I18n objects, thus providing an
 
 **Note**: Since the `i18nTable` and the `is_culture` schema properties are lost after Propel model generation, `with('I18n')` only works if the i18n table is named after the main table (e.g. 'Article' => 'ArticleI18n') and if the culture column name is `culture`. This is the default symfony behavior, so it should work if you didn't define special i18n table and column names.
 
-### Adding columns
+### Adding Columns
 
 If what you need is a single property of a related object, you probably don't need to hydrate the whole related object. For those cases, the finder allows you to add only one column of a related object with `withColumn()`. You can retrieve supplementary columns added by the finder by calling `getColumn()` on the resulting objects.
 
@@ -481,13 +479,13 @@ Warning: The `withColumn()` feature requires symfony's Behavior system. It will 
       findOne();
     $categoryName = $article->getColumn('CategoryCreatedAt');
 
-### Counting objects
+### Counting Objects
 
     [php]
     // Counting all Articles
     $nbArticles = DbFinder::from('Article')->count();
 
-### Getting a paginated list of results
+### Getting A Paginated List Of Results
 
     [php]
     // Getting an initialized sfPropelPager object
@@ -502,7 +500,7 @@ Warning: The `withColumn()` feature requires symfony's Behavior system. It will 
       echo $article->getTitle();
     }
 
-### Deleting objects
+### Deleting Objects
 
     [php]
     // Deleting all Articles
@@ -512,7 +510,7 @@ Warning: The `withColumn()` feature requires symfony's Behavior system. It will 
       where('Title', 'like', 'foo%')->
       delete();
 
-### Updating objects
+### Updating Objects
 
     [php]
     $article1 = new Article;
@@ -556,7 +554,7 @@ Warning: The `withColumn()` feature requires symfony's Behavior system. It will 
     // Also works for objects with composite primary keys
     $articleI18n = DbFinder::from('ArticleI18n')->findPk(array(123, 'fr'));
 
-### Getting columns instead of objects
+### Getting Columns Instead Of Objects
 
     [php]
     // When you only need a few columns, it is faster to skip object hydration
@@ -577,7 +575,7 @@ Warning: The `withColumn()` feature requires symfony's Behavior system. It will 
       select(array('Id', 'Title', 'Content', 'Category.Name'), sfModelFinder::SIMPLE)->
       find();
     // returns array(
-        array('123, 'foo', 'This is foo', 'Miscellaneous'),
+        array(123, 'foo', 'This is foo', 'Miscellaneous'),
         array(456, 'bar', 'This is bar', 'Main')
       )
     
@@ -588,7 +586,7 @@ Warning: The `withColumn()` feature requires symfony's Behavior system. It will 
       findOne();
     // returns array('Id' => 123, 'Title' => 'foo', 'Content' => 'This is foo', 'Category.Name' => 'Miscellaneous')
     
-    // When you need only one column, use pass a column name to select()
+    // When you need only one column, use a column name as the select() argument
     $articleTitles = DbFinder::from('Article')->
       join('Category')->
       select('Title')->
@@ -614,7 +612,7 @@ Warning: The `withColumn()` feature requires symfony's Behavior system. It will 
       array('bar', 32)
     )
     
-    // When you wan to select all the columns from the main class, use select('*')
+    // When you want to select all the columns from the main class, use select('*')
     $articles = DbFinder::from('Article')->
       select('*')->
       find();
@@ -623,7 +621,7 @@ Warning: The `withColumn()` feature requires symfony's Behavior system. It will 
         array('Id' => 456, 'Title' => 'bar', 'Content' => 'This is bar')
       )
     
-### Magic finder methods
+### Magic Finder Methods
 
 The finder recognizes method calls composed of `where`/`join`/`orderBy`, and a class / column name. It then forwards the method call to the related method, adding the class/column name as a first argument.
 
@@ -636,9 +634,9 @@ The finder recognizes method calls composed of `where`/`join`/`orderBy`, and a c
     // same as
     DbFinder::from('Article')->orderBy('CreatedAt')->find();
 
-    DbFinder::from('Article')->joinComment()->whereComment_Title('Hey')->      findOne();
+    DbFinder::from('Article')->joinComment()->whereComment_Title('Hey')->findOne();
     // same as
-    DbFinder::from('Article')->join('Comment')->where('Comment.Title', 'Hey')->      findOne();
+    DbFinder::from('Article')->join('Comment')->where('Comment.Title', 'Hey')->findOne();
 
 The most useful magic methods are `findByXXX()` and `findOneByXXX()`.
 
@@ -672,20 +670,9 @@ The most useful magic methods are `findByXXX()` and `findOneByXXX()`.
       find();
     // Available condtional methods are _if(), _elseif(), _else(), and _endif()
 
-### Using Class Shortcuts
+### Writing Your Own business Logic Into A Finder
 
-    [php]
-    $article = DbFinder::from('Article a')->
-      where('a.Title', 'foo')->
-      findOne();
-    // same as
-    $article = DbFinder::from('Article')->
-      where('Article.Title', 'foo')->
-      findOne();
-
-### Writing your own business logic into a finder
-
-You can create a new finder for your objects, with custom methods. The only prerequisites are to extend `DbFinder`, and to define a protected `$class` property.
+You can create a new finder class for your models, with custom methods. The only prerequisites are to extend `DbFinder`, and to define a protected `$class` property.
 
 For instance, you can create an child of `DbFinder` to retrieve Propel `Article` objects. This new finder has access to a protected query object by way of `getQueryObject()`. This object is a Propel Criteria that can be augmented in the usual way. Don't forget to return the current object (`$this`) in the new methods.
 
@@ -765,7 +752,7 @@ You can create several custom finders for a given model, in order to separate th
 
 **Warning**: The query cache also works with the Doctrine adapter, although the cache object passed to `useCache()` must implement the `Doctrine_Cache` interface (which is not the case for the symfony cache classes). Also, count queries are not cached with the Doctrine adapter (see [Ticket #1561](http://trac.doctrine-project.org/ticket/1561)).
 
-### Hacking the finder
+### Hacking The Finder
 
 If the finder doesn't (yet) provide the method to build the query you need, you can still call `Criteria` methods on the `sfPropelFinder` objects, or call `Doctrine_Query` methods on the `sfDoctrineFinder` objects, and they will be applied to the finder's internal query object.
 
@@ -793,6 +780,8 @@ If you're not sure about what query is issued by the finder, you can always chec
     $finder->findOne();
     echo $finder->getLatestQuery();
     // 'SELECT article.ID, article.VERSION, article.TITLE, article.CATEGORY_ID FROM article WHERE article.TITLE=\'foo\' LIMIT 1'
+
+**Tip**: When developing with the finder, you may prefer to have an array or string representation of the results rather than an array of objects. The finder objects provides three methods (`toArray()`, `toString()` and `toHtml()`) that internally execute a `find()` and return something that you can output in your response.
 
 TODO / Ideas
 ------------

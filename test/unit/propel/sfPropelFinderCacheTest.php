@@ -33,7 +33,7 @@ Beware that the tables for these models will be emptied by the tests, so use a t
 
 include dirname(__FILE__).'/../../bootstrap.php';
 
-$t = new lime_test(30, new lime_output_color());
+$t = new lime_test(34, new lime_output_color());
 
 $t->diag('getUniqueIdentifier()');
 
@@ -68,6 +68,10 @@ $t->isnt($id1, $id2, 'unique identifier takes logic combinators into account');
 $id1 = DbFinder::from('Article')->where('Title', 'foo')->where('Id', '=', 1, 'temp')->getUniqueIdentifier();
 $id2 = DbFinder::from('Article')->where('Title', 'foo')->getUniqueIdentifier();
 $t->is($id1, $id2, 'unique identifier does not take uncombined conditions into account');
+
+$id1 = DbFinder::from('Article')->where('Title', 'foo')->getUniqueIdentifier();
+$id2 = DbFinder::from('Article')->where('Title', 'foo')->select('Title')->getUniqueIdentifier();
+$t->isnt($id1, $id2, 'unique identifier takes selected columns into account');
 
 sfConfig::set('sf_use_process_cache', true);
 if(!class_exists('sfProcessCache'))
@@ -164,6 +168,21 @@ $SQL1 = $finder->getLatestQuery();
 $finder->where('Title', 'foo')->with('Category')->count();
 $SQL2 = $finder->getLatestQuery();
 $t->is($SQL1, $SQL2, 'Cached count queries do not trigger SQL queries');
+
+// select()
+
+$finder = DbFinder::from('Article')->useCache($cache, 10);
+$finder = $finder->where('Title', 'foo')->select('Title');
+$key = $finder->getUniqueIdentifier();
+$t->is($cache->get($key), null, 'No cache is set until the query is executed');
+$finder->find();
+$t->cmp_ok($cache->get($key), '!==', null, 'useCache() activates query caching on find() queries called after select()');
+$finder->where('Title', 'bar')->find();
+$SQL1 = $finder->getLatestQuery();
+$finder->where('Title', 'foo')->select('Title')->find();
+$SQL2 = $finder->getLatestQuery();
+$t->is($SQL1, $SQL2, 'Cached select() queries do not trigger SQL queries');
+
 
 $t->diag('sfPropelFinderCache::justUsedCache()');
 

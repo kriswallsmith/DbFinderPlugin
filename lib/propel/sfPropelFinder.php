@@ -28,7 +28,8 @@ class sfPropelFinder extends sfModelFinder
     $culture         = null,
     $cache           = null,
     $findColumns     = false,
-    $select          = null;
+    $select          = null,
+    $keyType         = null;
   
   public function getClass()
   {
@@ -1699,6 +1700,8 @@ class sfPropelFinder extends sfModelFinder
   {
     return __CLASS__ . md5(
       $this->getClass().
+      serialize($this->select).
+      $this->keyType.
       serialize($this->getCriteria()).
       serialize($this->getWithClasses()).
       serialize($this->getWithColumns())
