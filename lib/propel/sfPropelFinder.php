@@ -1405,6 +1405,10 @@ class sfPropelFinder extends sfModelFinder
    */
   public function relatedTo($object)
   {
+    if(!$object instanceof BaseObject)
+    {
+      throw new Exception(sprintf('relatedTo() expects a Propel model object, "%s" given', get_class($object)));
+    }
     // looking for a 1-n relationship
     $relatedObjectTableName = $object->getPeer()->getTableMap()->getName();
     foreach (sfPropelFinderUtils::getColumnsForPeerClass($this->peerClass) as $c)
@@ -1428,7 +1432,7 @@ class sfPropelFinder extends sfModelFinder
       }
     }
     
-    throw new Exception('Could not find a relation with object of class '.get_class($object));
+    throw new Exception(sprintf('Could not find a relation with object of class %s', get_class($object)));
   }
   
   /**
