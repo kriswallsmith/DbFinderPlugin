@@ -1756,9 +1756,9 @@ class sfPropelFinder extends sfModelFinder
       }
       $dsn = $connection->getDSN();
       $dns =  $dsn['phptype'] . ':' .
-              (!empty($dsn['host']) ? (':host=' . $dsn['hostspec']) : '') .
-              (!empty($dsn['port']) ? (';port=' . $dsn['port']) : '') .
-              ($dsn['phptype'] == 'sqlite' ? $dsn['database'] : ';dbname=' . $dsn['database']);
+              (!empty($dsn['hostspec']) ? ('host=' . $dsn['hostspec'] . ';') : '') .
+              (!empty($dsn['port']) ? ('port=' . $dsn['port'] . ';') : '') .
+              ($dsn['phptype'] == 'sqlite' ? $dsn['database'] : 'dbname=' . $dsn['database']);
       $connection = new PDO($dns, $dsn['username'], $dsn['password']);
     }
     return $connection;
