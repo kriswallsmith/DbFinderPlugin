@@ -462,7 +462,14 @@ $finder = sfDoctrineFinder::from('DComment')->
   withColumn('DArticle.Title');
 $comment = $finder->findOne();
 $t->is($comment['Article']['DArticle.Title'], 'bbbbb', 'Additional columns added with withColumn() are stored in the object and can be retrieved as properties of the related object');
-$t->is($comment->getColumn('DArticle.Title'), 'bbbbb', 'Additional columns added with withColumn() are stored in the object and can be retrieved with getColumn()');
+try
+{
+  $t->is($comment->getColumn('DArticle.Title'), 'bbbbb', 'Additional columns added with withColumn() are stored in the object and can be retrieved with getColumn()');
+}
+catch(Doctrine_Record_Exception $e)
+{
+  $t->skip('getColumn() is not available with Doctrine 0.11');
+}
 $t->is($finder->getLatestQuery(), 'SELECT d.id AS d__id, d.content AS d__content, d.article_id AS d__article_id, d.author_id AS d__author_id, d2.title AS d2__0 FROM d_comment d INNER JOIN d_article d2 ON d.article_id = d2.id LIMIT 1', 'Columns added with withColumn() can contain a dot');
 
 Doctrine::getTable('DArticle')->clear();
@@ -471,7 +478,14 @@ Doctrine::getTable('DComment')->clear();
 $finder = sfDoctrineFinder::from('DComment')->
   withColumn('DArticle.Title');
 $comment = $finder->findOne();
-$t->is($comment->getColumn('DArticle.Title'), 'bbbbb', 'If withColumn() is called on a related object column with no join on this class, the finder adds the join automatically');
+try
+{
+  $t->is($comment->getColumn('DArticle.Title'), 'bbbbb', 'If withColumn() is called on a related object column with no join on this class, the finder adds the join automatically');
+}
+catch(Doctrine_Record_Exception $e)
+{
+  $t->skip('getColumn() is not available with Doctrine 0.11');
+}
 $t->is($finder->getLatestQuery(), 'SELECT d.id AS d__id, d.content AS d__content, d.article_id AS d__article_id, d.author_id AS d__author_id, d2.title AS d2__0 FROM d_comment d INNER JOIN d_article d2 ON d.article_id = d2.id LIMIT 1', 'If withColumn() is called on a related object column with no join on this class, the finder adds the column automatically');
 
 Doctrine::getTable('DArticle')->clear();
@@ -481,7 +495,14 @@ $comment = sfDoctrineFinder::from('DComment')->
   join('DArticle')->
   withColumn('DArticle.Title', 'ArticleTitle')->
   findOne();
-$t->is($comment->getColumn('ArticleTitle'), 'bbbbb', 'withColumn() second parameter serves as a column alias');
+try
+{
+  $t->is($comment->getColumn('ArticleTitle'), 'bbbbb', 'withColumn() second parameter serves as a column alias');
+}
+catch(Doctrine_Record_Exception $e)
+{
+  $t->skip('getColumn() is not available with Doctrine 0.11');
+}
 
 Doctrine::getTable('DArticle')->clear();
 Doctrine::getTable('DComment')->clear();
@@ -490,7 +511,14 @@ $comment = sfDoctrineFinder::from('DComment')->
   join('DArticle a')->
   withColumn('a.Title')->
   findOne();
-$t->is($comment->getColumn('a.Title'), 'bbbbb', 'withColumn() accepts a class alias');
+try
+{
+  $t->is($comment->getColumn('a.Title'), 'bbbbb', 'withColumn() accepts a class alias');
+}
+catch(Doctrine_Record_Exception $e)
+{
+  $t->skip('getColumn() is not available with Doctrine 0.11');
+}
 
 Doctrine::getTable('DArticle')->clear();
 Doctrine::getTable('DComment')->clear();
@@ -499,13 +527,27 @@ $comment = sfDoctrineFinder::from('DComment')->
   join('DArticle a')->
   withColumn('a.Title', 'b')->
   findOne();
-$t->is($comment->getColumn('b'), 'bbbbb', 'withColumn() accepts a class alias and a column alias');
+try
+{
+  $t->is($comment->getColumn('b'), 'bbbbb', 'withColumn() accepts a class alias and a column alias');
+}
+catch(Doctrine_Record_Exception $e)
+{
+  $t->skip('getColumn() is not available with Doctrine 0.11');
+}
 
 $comment = sfDoctrineFinder::from('DComment')->
   join('DArticle c')->
   withColumn('c.Title', 'GURSIKSO')->
   findOne();
-$t->is($comment->getColumn('GURSIKSO'), 'bbbbb', 'withColumn() plays well with Identity map (and doesn\'t require to clear the table prior to finding objects in it)');
+try
+{
+  $t->is($comment->getColumn('GURSIKSO'), 'bbbbb', 'withColumn() plays well with Identity map (and doesn\'t require to clear the table prior to finding objects in it)');
+}
+catch(Doctrine_Record_Exception $e)
+{
+  $t->skip('getColumn() is not available with Doctrine 0.11');
+}
 
 // Test when additional column is in a chain of relations
 
@@ -517,21 +559,42 @@ $comment = sfDoctrineFinder::from('DComment')->
   join('DCategory')->
   withColumn('DCategory.Name')->
   findOne();
-$t->is($comment->getColumn('DCategory.Name'), 'cat1', 'withColumn() works even if the table of the withColumn is not directly related');
+try
+{
+  $t->is($comment->getColumn('DCategory.Name'), 'cat1', 'withColumn() works even if the table of the withColumn is not directly related');
+}
+catch(Doctrine_Record_Exception $e)
+{
+  $t->skip('getColumn() is not available with Doctrine 0.11');
+}
 
 $comment = sfDoctrineFinder::from('DComment')->
   join('DArticle')->join('DAuthor')->
   withColumn('DArticle.Title')->
   withColumn('DAuthor.Name')->
   findOne();
-$t->is($comment->getColumn('DArticle.Title'), 'bbbbb', 'withColumn() can be called several times');
-$t->is($comment->getColumn('DAuthor.Name'), 'John', 'withColumn() can be called several times');
+try
+{
+  $t->is($comment->getColumn('DArticle.Title'), 'bbbbb', 'withColumn() can be called several times');
+  $t->is($comment->getColumn('DAuthor.Name'), 'John', 'withColumn() can be called several times');
+}
+catch(Doctrine_Record_Exception $e)
+{
+  $t->skip('getColumn() is not available with Doctrine 0.11', 2);
+}
 
 $comment = sfDoctrineFinder::from('DComment')->
   join('DArticle')->with('DAuthor')->
   withColumn('DArticle.Title')->
   findOne();
-$t->is($comment->getColumn('DArticle.Title'), 'bbbbb', 'Columns added with withColumn() live together well with related objects added with with()');
+try
+{
+  $t->is($comment->getColumn('DArticle.Title'), 'bbbbb', 'Columns added with withColumn() live together well with related objects added with with()');
+}
+catch(Doctrine_Record_Exception $e)
+{
+  $t->skip('getColumn() is not available with Doctrine 0.11');
+}
 $t->is($comment->getAuthor()->getName(), 'John', 'Related objects added with with() live together well with columns added with withColumn()');
 
 $finder = sfDoctrineFinder::from('DArticle')->
@@ -540,8 +603,14 @@ $finder = sfDoctrineFinder::from('DArticle')->
   withColumn('COUNT(DComment.Id)', 'NbComments');
 $article = $finder->findOne();
 $t->is($finder->getLatestQuery(), 'SELECT d.id AS d__id, d.title AS d__title, d.category_id AS d__category_id, COUNT(d2.id) AS d2__0 FROM d_article d INNER JOIN d_comment d2 ON d.id = d2.article_id GROUP BY d.id LIMIT 1', 'withColumn() accepts complex SQL calculations as additional column');
-$t->is($article->getColumn('NbComments'), 1, 'Complex SQL calculations can be retrieved by way of getColumn()');
-
+try
+{
+  $t->is($article->getColumn('NbComments'), 1, 'Complex SQL calculations can be retrieved by way of getColumn()');
+}
+catch(Doctrine_Record_Exception $e)
+{
+  $t->skip('getColumn() is not available with Doctrine 0.11');
+}
 $finder = sfDoctrineFinder::from('DArticle')->
   join('DComment')->
   groupBy('DArticle.Id')->
@@ -594,7 +663,15 @@ $article2->setTitle('bbb');
 $article2->save();
 
 $article = sfDoctrineFinder::from('DArticle')->leftJoin('DCategory')->with('DCategory')->findLast();
-$t->isa_ok($article->getCategory(), 'NULL', 'In a left join using with(), empty related objects are not hydrated');
+$category = $article->getCategory();
+if (is_object($category))
+{
+  $t->isa_ok($article->getCategory(), 'Doctrine_Null', 'In a left join using with(), empty related objects are not hydrated');
+}
+else
+{
+  $t->isa_ok($article->getCategory(), 'NULL', 'In a left join using with(), empty related objects are not hydrated');
+}
 
 Doctrine_Query::create()->delete()->from('DComment')->execute();
 Doctrine_Query::create()->delete()->from('DArticle')->execute();

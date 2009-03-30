@@ -837,7 +837,6 @@ class sfDoctrineFinder extends sfModelFinder
         'alias'    => $classAlias
       );
     }
-    
     return $this;
   }
   
@@ -947,11 +946,22 @@ class sfDoctrineFinder extends sfModelFinder
       }
       if($cond == 'or')
       {
+        if(!method_exists($this->query, 'orWhereNotIn'))
+        {
+          throw new Exception('Conditions with a NOT IN cannot be used as an OR condition with Doctrine 0.11');
+        }
         $this->query->orWhereNotIn($column, $value);
       }
       else
       {
-        $this->query->andWhereNotIn($column, $value);
+        if(method_exists($this->query, 'andWhereNotIn'))
+        {
+          $this->query->andWhereNotIn($column, $value);
+        }
+        else
+        {
+          $this->query->whereNotIn($column, $value);
+        }
       }
     }
     else if($comparison == ' IN ')
@@ -962,11 +972,22 @@ class sfDoctrineFinder extends sfModelFinder
       }
       if($cond == 'or')
       {
+        if(!method_exists($this->query, 'orWhereIn'))
+        {
+          throw new Exception('Conditions with an IN statement cannot be used as an OR condition with Doctrine 0.11');
+        }
         $this->query->orWhereIn($column, $value);
       }
       else
       {
-        $this->query->andWhereIn($column, $value);
+        if(method_exists($this->query, 'andWhereIn'))
+        {
+          $this->query->andWhereIn($column, $value);
+        }
+        else
+        {
+          $this->query->whereIn($column, $value);
+        }
       }
     }
     else

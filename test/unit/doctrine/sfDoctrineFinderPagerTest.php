@@ -89,7 +89,15 @@ $finder = sfDoctrineFinder::from('DArticle')->
   where('CategoryId', 1);
 $pager->setFinder($finder);
 $pager->init();
-$t->is($finder->getLatestQuery(), 'SELECT COUNT(DISTINCT d.id) AS num_results FROM d_article d WHERE (d.title = \'foo\' AND d.category_id = \'1\') GROUP BY d.id' , 'sfDoctrineFinderPager::init() issues a COUNT DISTINCT query with the correct WHERE conditions');
+if (Doctrine::VERSION == '0.11.0')
+{
+  $t->is($finder->getLatestQuery(), 'SELECT COUNT(DISTINCT d.id) AS num_results FROM d_article d WHERE (d.title = \'foo\' AND d.category_id = \'1\') GROUP BY d.id' , 'sfDoctrineFinderPager::init() issues a COUNT DISTINCT query with the correct WHERE conditions');
+}
+else
+{
+  echo Doctrine::VERSION, "\n";
+  $t->is($finder->getLatestQuery(), 'SELECT COUNT(*) AS num_results FROM d_article d WHERE (d.title = \'foo\' AND d.category_id = \'1\')' , 'sfDoctrineFinderPager::init() issues a COUNT query with the correct WHERE conditions');
+}
 
 $t->diag('sfDoctrineFinder::paginate()');
 
@@ -147,8 +155,8 @@ $finder = sfDoctrineFinder::from('DArticle')->
 $pager = $finder->paginate(2, 1);
 $results = $pager->getResults();
 $t->is(
-  $finder->getLatestQuery(),
-  "SELECT d.id AS d__id, d.title AS d__title, d.category_id AS d__category_id FROM d_article d WHERE (d.title = 'foo' AND d.category_id = '1') LIMIT 1 OFFSET 1",
+  substr($finder->getLatestQuery(), 0, 139),
+  "SELECT d.id AS d__id, d.title AS d__title, d.category_id AS d__category_id FROM d_article d WHERE (d.title = 'foo' AND d.category_id = '1')",
   'getResults() does not repeat conditions'
 );
 

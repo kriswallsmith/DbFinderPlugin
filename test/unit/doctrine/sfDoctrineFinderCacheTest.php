@@ -76,6 +76,12 @@ $id1 = DbFinder::from('DArticle')->where('Title', 'foo')->where('Id', '=', 1, 't
 $id2 = DbFinder::from('DArticle')->where('Title', 'foo')->getUniqueIdentifier();
 $t->is($id1, $id2, 'unique identifier does not take uncombined conditions into account');
 
+if (Doctrine::VERSION == '0.11.0')
+{
+  $t->skip('Query cache does not work with Doctrine 0.11', 12);
+  die();
+}
+
 $cache = new Doctrine_Cache_Apc();
 
 $t->diag('useCache()');
@@ -166,9 +172,14 @@ $t->diag('useCache(true)');
 
 apc_clear_cache('user');
 
+Doctrine_Query::create()->delete()->from('DArticle')->execute();
+$article1 = new DArticle();
+$article1->setTitle('foo1');
+$article1->save();
+
 $finder = DbFinder::from('DArticle')->useCache(true, 10);
 $finder->where('Title', 'foo1')->limit(1);
-$key = $finder->getUniqueIdentifier();
+$key = $finder->getQueryObject()->calculateResultCacheHash();
 $t->is($cache->fetch($key), null, 'No cache is set until the query is written');
 $finder->find();
 $t->isnt($cache->fetch($key), null, 'useCache(true) automatically selects available cache backend');
