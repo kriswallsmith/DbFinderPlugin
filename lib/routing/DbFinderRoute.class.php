@@ -33,12 +33,28 @@ class DbFinderRoute extends sfObjectRoute
    *
    * @see sfObjectRoute
    */
-  public function __construct($pattern, array $defaults = array(), array $requirements = array(), array $options = array())
-  {
-    parent::__construct($pattern, $defaults, $requirements, $options);
+ public function __construct($pattern, array $defaults = array(), array $requirements = array(), array $options = array())
+ {
+   if (!isset($options['model']))
+   {
+     throw new InvalidArgumentException(sprintf('You must pass a "model" option for a %s object (%s).', get_class($this), $pattern));
+   }
 
-    $this->options['object_model'] = $this->options['model'];
-  }
+   if (!isset($options['type']))
+   {
+     throw new InvalidArgumentException(sprintf('You must pass a "type" option for a %s object (%s).', get_class($this), $pattern));
+   }
+
+   if (!in_array($options['type'], array('object', 'list', 'pager')))
+   {
+     throw new InvalidArgumentException(sprintf('The "type" option can only be "object", "list", or "pager", "%s" given (%s).', $options['type'], $pattern));
+   }
+
+   $this->pattern      = trim($pattern);
+   $this->defaults     = $defaults;
+   $this->requirements = $requirements;
+   $this->options      = $options;
+ }
   
   public function setListFinder(sfModelFinder $finder)
   {
@@ -52,64 +68,122 @@ class DbFinderRoute extends sfObjectRoute
 
   protected function getObjectForParameters($parameters)
   {
-    return $this->getForParameters($parameters, 'findOne');
+    return $this->getFinder($parameters)->findOne();
   }
   
-  protected function getObjectsForParameters($parameters)
+  /**
+   * Gets the list of objects related to the current route and parameters.
+   *
+   * This method is only accessible if the route is bound and of type "list".
+   *
+   * @param integer $limit The number of results to return (defaults to no limit)
+   * 
+   * @return array And array of related objects
+   */
+  public function getObjects($limit = null)
   {
-    return $this->getForParameters($parameters, 'find');
-  }
-  
-  protected function getForParameters($parameters, $method = 'find')
-  {
-    if (!isset($this->options['method']))
+    if (!$this->isBound())
     {
-      if (is_null($this->finder))
-      {
-        $finder = DbFinder::from($this->options['model']);
-        foreach ($this->getRealVariables() as $variable)
-        {
-          $camlVariable = sfInflector::camelize($variable);
-          $customWhere = 'where' . $camlVariable;
-          if(method_exists($finder, $customWhere))
-          {
-            $finder->$customWhere($parameters[$variable]);
-          }
-          else
-          {
-            try
-            {
-              $finder->where(sfInflector::camelize($variable), $parameters[$variable]);
-            }
-            catch (Exception $e)
-            {
-              // don't add condition if the variable cannot be mapped to a column
-            }
-            
-          }
-        }
-      }
-      else
-      {
-        $finder = $this->finder;
-      }
-      if (isset($this->options['finder_methods']))
-      {
-        foreach ($this->options['finder_methods'] as $finder_methods)
-        {
-          $finder->$finder_methods();
-        }
-      }
+      throw new LogicException('The route is not bound.');
+    }
 
-      $results = $finder->$method();
+    if ('list' != $this->options['type'])
+    {
+      throw new LogicException(sprintf('The route "%s" is not of type "list".', $this->pattern));
+    }
+
+    if (false !== $this->objects)
+    {
+      return $this->objects;
+    }
+
+    $this->objects = $this->getFinder($this->parameters)->find($limit);
+
+    if (!count($this->objects) && isset($this->options['allow_empty']) && !$this->options['allow_empty'])
+    {
+      throw new sfError404Exception(sprintf('No %s object found for the following parameters "%s").', $this->options['model'], str_replace("\n", '', var_export($this->filterParameters($this->parameters), true))));
+    }
+
+    return $this->objects;
+  }
+  
+  /**
+   * Gets a pager of objects related to the current route and parameters.
+   *
+   * This method is only accessible if the route is bound and of type "pager".
+   *
+   * @param integer $page The current page (1 by default)
+   * @param integer $maxPerPage The maximum number of results per page (10 by default)
+   *
+   * @return array And array of related objects
+   */
+  public function getObjectPager($page = 1, $maxPerPage = 10)
+  {
+    if (!$this->isBound())
+    {
+      throw new LogicException('The route is not bound.');
+    }
+
+    if ('pager' != $this->options['type'])
+    {
+      throw new LogicException(sprintf('The route "%s" is not of type "pager".', $this->pattern));
+    }
+
+    if (false !== $this->pager)
+    {
+      return $this->pager;
+    }
+
+    $this->pager = $this->getFinder($this->parameters)->paginate($page, $maxPerPage);
+
+    if (!$this->pager->getNbResults() && isset($this->options['allow_empty']) && !$this->options['allow_empty'])
+    {
+      throw new sfError404Exception(sprintf('No %s object found for the following parameters "%s").', $this->options['model'], str_replace("\n", '', var_export($this->filterParameters($this->parameters), true))));
+    }
+
+    return $this->pager;
+  }
+  
+  protected function getFinder($parameters)
+  {
+    if (is_null($this->finder))
+    {
+      $finder = DbFinder::from($this->options['model']);
+      foreach ($this->getRealVariables() as $variable)
+      {
+        $camlVariable = sfInflector::camelize($variable);
+        $customWhere = 'where' . $camlVariable;
+        if(method_exists($finder, $customWhere))
+        {
+          $finder->$customWhere($parameters[$variable]);
+        }
+        else
+        {
+          try
+          {
+            $finder->where(sfInflector::camelize($variable), $parameters[$variable]);
+          }
+          catch (Exception $e)
+          {
+            // don't add condition if the variable cannot be mapped to a column
+          }
+          
+        }
+      }
     }
     else
     {
-      $method = $this->options['method'];
-      $results = DbFinder::from($this->options['model'])->$method($this->filterParameters($parameters));
+      $finder = $this->finder;
+    }
+    if (isset($this->options['finder_methods']))
+    {
+      foreach ($this->options['finder_methods'] as $finder_methods)
+      {
+        $finder->$finder_methods();
+      }
     }
 
-    return $results;
+    return $finder;
   }
 
   protected function doConvertObjectToArray($object)

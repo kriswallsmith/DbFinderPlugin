@@ -82,8 +82,6 @@
       <dir name="lib">
         <file name="DbFinder.php" role="data"/>
         <file name="DbFinderAdapterUtils.class.php" role="data"/>
-        <file name="DbFinderAdminGenerator.class.php" role="data"/>
-        <file name="DbFinderColumn.class.php" role="data"/>
         <file name="sfModelFinder.php" role="data"/>
         <file name="sfModelFinderFake.php" role="data"/>
         <dir name="doctrine">
@@ -93,6 +91,10 @@
           <file name="sfDoctrineFinderPager.php" role="data"/>
           <file name="sfDoctrineFinderRecordTemplate.php" role="data"/>
         </dir>
+        <dir name="generator">
+          <file name="DbFinderAdminGenerator.class.php" role="data"/>
+          <file name="DbFinderColumn.class.php" role="data"/>
+        </dir>
         <dir name="propel">
           <file name="sfPropelFinder.php" role="data"/>
           <file name="sfPropelFinderCache.php" role="data"/>
@@ -101,6 +103,9 @@
           <file name="sfPropelFinderRelation.php" role="data"/>
           <file name="sfPropelFinderRelationManager.php" role="data"/>
           <file name="sfPropelFinderUtils.php" role="data"/>
+        </dir>
+        <dir name="routing">
+          <file name="DbFinderRoute.class.php" role="data"/>
         </dir>
       </dir>
     </dir>

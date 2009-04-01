@@ -799,9 +799,10 @@ TODO / Ideas
 Changelog
 ---------
 
-### 2009-03-23 | Trunk
+### 2009-04-01 | Trunk
 
-* francois: Added a `DbFinderRoute` class to implement object routing without knowing if the underlying object is Propel or Doctrine
+* francois: Added `DbFinderRoute::getObjectPager()` method
+* francois: Added a `DbFinderRoute` class to implement object routing without knowing if the underlying object is Propel or Doctrine.
 * francois: Simplified the use of 'is null' and 'is not null' operators
 * francois: Added `sfPropelFinder::select()` (based on a patch by Benjamin Runnels)
 * francois: Improved performance when using `sfPropelFinder::with()` and `sfPropelFinder::withI18n()`
