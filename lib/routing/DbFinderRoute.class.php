@@ -199,7 +199,7 @@ class DbFinderRoute extends sfObjectRoute
       try
       {
         $method = 'get'.sfInflector::camelize($variable);
-        $parameters[$variable] = $object->$method;
+        $parameters[$variable] = call_user_func(array($object, $method));
       }
       catch (Exception $e)
       {
