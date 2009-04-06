@@ -1421,6 +1421,39 @@ class sfDoctrineFinder extends sfModelFinder
     return $this;
   }
   
+  /**
+   * Returns the column type of one of the columns of the current model
+   * 
+   * @param string $name a CamelCase column name (e.g. CategoryId)
+   *
+   * @return string Any of the sfModelFinderColumn constants
+   */
+  public function getColumnType($name)
+  {
+    $column = $this->getColumnObject($name);
+    
+    return sfDoctrineFinderColumn::getColumnType($column);
+  }
+  
+  /**
+   * Returns a sfDoctrineColumn object filled with the information of a column of the current table
+   *
+   * @param string $name a CamelCase column name (e.g. CategoryId)
+   *
+   * @return sfDoctrineColumn a column object
+   */
+  public function getColumnObject($name)
+  {
+    $uName = self::underscore($name);
+    if(!$this->object->getTable()->hasColumn($uName))
+    {
+      throw new Exception(sprintf('Class %s has no %s column', $this->class, $name));
+    }
+    // compatibility layer for sfDoctrine 1.0 and 1.1
+    $class = class_exists('sfDoctrineAdminColumn') ? 'sfDoctrineAdminColumn' : 'sfDoctrineColumn';
+    return new $class($uName, $this->object->getTable()->getColumnDefinition($uName));
+  }
+  
   protected function hasRelation($class)
   {
     return array_key_exists($class, $this->relations);

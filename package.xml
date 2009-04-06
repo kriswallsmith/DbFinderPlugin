@@ -83,6 +83,7 @@
         <file name="DbFinder.php" role="data"/>
         <file name="DbFinderAdapterUtils.class.php" role="data"/>
         <file name="sfModelFinder.php" role="data"/>
+        <file name="sfModelFinderColumn.class.php" role="data"/>
         <file name="sfModelFinderFake.php" role="data"/>
         <dir name="doctrine">
           <file name="sfDoctrineFinder.php" role="data"/>
@@ -93,7 +94,6 @@
         </dir>
         <dir name="generator">
           <file name="DbFinderAdminGenerator.class.php" role="data"/>
-          <file name="DbFinderColumn.class.php" role="data"/>
         </dir>
         <dir name="propel">
           <file name="sfPropelFinder.php" role="data"/>

@@ -16,7 +16,7 @@ abstract class sfModelFinder
     $relations = array();
   
   const 
-    SIMPLE = 'FETCH_NUM',
+    SIMPLE      = 'FETCH_NUM',
     ASSOCIATIVE = 'FETCH_ASSOC';
   
   public function __construct($class = '', $connection = null)
@@ -143,6 +143,145 @@ abstract class sfModelFinder
     
   public function _endif()
   {
+    return $this;
+  }
+  
+  /**
+   * Finder Fluid Interface for a filter on one of the columns of the model
+   * Infers the type of comparison to apply to the value, based on the column type
+   * Examples:
+   *   $articleFinder->filterBy('IsPublished', 1)
+   *    => $articleFinder->where('IsPublished', true)
+   *   $articleFinder->filterBy('CreatedAt', array('from' => '2008-03-04'))
+   *    => $articleFinder->where('CreatedAt', '>=', '2008-03-04')
+   *   $articleFinder->filterBy('Title', 'foo')
+   *    => $articleFinder->where('Title', 'like', '%foo%')
+   *
+   * @param      string  $name PHPName of the column bearing the condition
+   * @param      string  $value Value to compare to
+   *
+   * @return     DbFinder the current finder object
+   */
+  public function filterBy($name, $value)
+  {
+    switch($this->getColumnType($name))
+    {
+      case sfModelFinderColumn::DATE:
+      case sfModelFinderColumn::TIMESTAMP:
+        if (isset($value['from']) && $value['from'] !== '')
+        {
+          if ($type == sfModelFinderColumn::DATE)
+          {
+            $this->where($name, '>=', date('Y-m-d', $value['from']));
+          }
+          else
+          {
+            $this->where($name, '>=', $value['from']);
+          }
+        }
+        if (isset($value['to']) && $value['to'] !== '')
+        {
+          if ($type == sfModelFinderColumn::DATE)
+          {
+            $this->where($name, '<=', date('Y-m-d', $value['to']));
+          }
+          else
+          {
+            $this->where($name, '<=', $value['to']);
+          }
+        }
+        break;
+      case sfModelFinderColumn::STRING:
+        $this->where($name, 'like', '%'.trim((string) $value, '*%').'%');
+        break;
+      case sfModelFinderColumn::BOOLEAN:
+        $this->where($name, (boolean) $value);
+        break;
+      case sfModelFinderColumn::DECIMAL:
+      case sfModelFinderColumn::REAL:
+      case sfModelFinderColumn::FLOAT:
+      case sfModelFinderColumn::DOUBLE:
+      case sfModelFinderColumn::NUMERIC:
+        $this->where($name, (float) $value);
+      case sfModelFinderColumn::INTEGER:
+      case sfModelFinderColumn::BIGINT:
+      case sfModelFinderColumn::TINYINT:
+      case sfModelFinderColumn::SMALLINT:
+        $this->where($name, (integer) $value);
+        break;
+      default:
+        $this->where($name, $value);
+    }
+    
+    return $this;
+  }
+  
+  /**
+   * Returns the column type of one of the columns of the current model
+   * 
+   * @param string $name a CamelCase column name (e.g. CategoryId)
+   *
+   * @return string Any of the sfModelFinderColumn constants
+   */
+  abstract public function getColumnType($name);
+
+  /**
+   * Finder Fluid Interface for a list of filters on the columns of the model
+   * Calls filterBy() on each of the keys of the filter list
+   * Unless the finder defines a custom filterByXXX() for any of the filters
+   *
+   * Examples:
+   *   $articleFinder->filter(array(
+   *     'IsPublished' => 1,
+   *     'CreatedAt'   => array('from' => '2008-03-04'),
+   *     'Title'       => 'foo'
+   *   ));
+   *    => $articleFinder->
+   *         where('IsPublished', true)->
+   *         where('CreatedAt', '>=', '2008-03-04')
+   *         where('Title', 'like', '%foo%');
+   *   $articleFinder->filter(array(
+   *     'is_published' => 1,
+   *     'created_at'   => array('from' => '2008-03-04'),
+   *     'title'        => 'foo'
+   *     'tags'         => 'test+bar'
+   *   ), true);
+   *    => $articleFinder->
+   *         where('IsPublished', true)->
+   *         where('CreatedAt', '>=', '2008-03-04')
+   *         where('Title', 'like', '%foo%')
+   *         filterByTags('test+bar');
+   *
+   * @param  array  $filters associative array of the column names and the values
+   * @param  boolean $isNameUnderscore Set to true if the keys are in the underscore form instead of CamelCase
+   * @param  array $allowedNames List of the allowed filters (e.g. array('IsPublished', 'CreatedAt')). Any filter not in this list is ignored.
+   *
+   * @return     DbFinder the current finder object
+   */
+  public function filter($filters, $isNameUnderscore = false, $allowedNames = null)
+  {
+    if(!is_array($filters))
+    {
+      throw new Exception('sfModelFinder::filter() expects an associative array as first parameter');
+    }
+    foreach ($filters as $name => $value)
+    {
+      if(is_array($allowedNames) && !in_array($name, $allowedNames)) continue;
+      if ($isNameUnderscore)
+      {
+        $name = sfInflector::camelize($name);
+      }
+      $customFilterMethod = 'filterBy' . $name;
+      if(method_exists($this, $customFilterMethod))
+      {
+        call_user_func(array($this, $customFilterMethod), $value);
+      }
+      else
+      {
+        $this->filterBy($name, $value);
+      }
+    }
+    
     return $this;
   }
   
@@ -285,7 +424,7 @@ abstract class sfModelFinder
         $value = array_shift($arguments);
         break;
       default:
-        throw new Exception('sfPropelFinder::whereXXX() can only be called with one or two arguments');
+        throw new Exception('sfModelFinder::whereXXX() can only be called with one or two arguments');
     }
     
     return array($value, $comparison);

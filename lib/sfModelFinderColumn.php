@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of the sfPropelFinder package.
+ * This file is part of the DbFinder package.
  * 
  * (c) 2008 François Zaninotto <francois.zaninotto@symfony-project.com>
  * 
@@ -10,10 +10,9 @@
  */
 
 /**
- * DbFinderColumn maps column types from various ORMs to an internal column type rule
- * Currently supported ORMs are Propel 1.2, Propel 1.3, and Doctrine 1.0
+ * sfModelFinderColumn lists model column types
  */
-class DbFinderColumn
+class sfModelFinderColumn
 {
   const STRING = "STRING";
   const NUMERIC = "NUMERIC";
@@ -36,9 +35,8 @@ class DbFinderColumn
   const BU_TIMESTAMP = "BU_TIMESTAMP";
   const BOOLEAN = "BOOLEAN";
   
-  public static function getType($column, $orm)
+  public static function getColumnType($column)
   {
-    $columnFinder = DbFinderAdapterUtils::getColumn($orm);
-    return call_user_func(array($columnFinder, 'getColumnType'), $column);
+    throw new Exception('This method must be overridden in subclasses!'); // abstract static not allowed since PHP 5.2
   }
 }

@@ -45,7 +45,8 @@ class DbFinderAdminGenerator extends sfGenerator
   
   public function getColumnType($column)
   {
-    return DbFinderColumn::getType($column, $this->orm);
+    $columnFinder = DbFinderAdapterUtils::getColumn($this->orm);
+    return call_user_func(array($columnFinder, 'getColumnType'), $column);
   }
   
   public function getColumnSetter($column, $value, $singleQuotes = false, $prefix = 'this->')

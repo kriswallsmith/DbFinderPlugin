@@ -106,6 +106,8 @@ class testFinder extends sfModelFinder
   protected function cleanup() {}
   public function getUniqueIdentifier() {}
   public function useCache($cacheInstance, $lifetime = 0) {}
+  
+  public function getColumnType($name) {}
 }
 
 $t->diag('_if()');

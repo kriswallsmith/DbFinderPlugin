@@ -718,6 +718,47 @@ You can create several custom finders for a given model, in order to separate th
 
 **Tip**: Being able to use any class as a finder means that you can use the finder API to query model objects that are not backed by any ORM at all.
 
+### Applying filters
+
+    [php]
+    // filterBy() is an alternative to where(), which takes only two parameters: a key and a value
+    // filterBy() converts the value and the guesses the comparison based on the column type
+    $articleFinder = DbFinder::from('Article');
+
+    $articleFinder->filterBy('NbComments', '10');
+    // NbComments is an integer, so filterBy() translates into a simple where() and forces the value type to integer
+    $articleFinder->where('NbComments', 10);
+    
+    $articleFinder->filterBy('Title', 'foo');
+    // Title is a string, so filterBy() translates into a like comparison
+    $articleFinder->where('Title', 'like', '%foo%');
+
+    $articleFinder->filterBy('CreatedAt', array('yesterday', 'today'));
+    // CreatedAt is a timestamp, so filterBy() translates into a between comparison
+    $articleFinder->where('CreatedAt', '<=', 'today')->where('CreatedAt', '>=', 'yesterday');
+
+    $articleFinder->filterBy('IsPublished', '1');
+    // IsPublished is a boolean, so filterBy() translates into a simple where() and forces the value type to boolean
+    $articleFinder->where('IsPublished', true);
+    
+    // filter() expects an associative array of key/value pairs
+    $articleFinder->filter(array(
+      'NbComments'  => '10',
+      'Title'       => 'foo',
+      'CreatedAt'   => array('yesterday', 'today'),
+      'IsPublished' => '1'
+    ));
+    // same as
+    $articleFinder->
+      where('NbComments', 10)->
+      where('Title', 'like', '%foo%')->
+      where('CreatedAt', '<=', 'today')->
+      where('CreatedAt', '>=', 'yesterday')->
+      where('IsPublished', true);
+
+    // filter() is therefore quite useful to filter a list based on an unsafe list of conditions,
+    // like the query string found in the admin generator list view
+
 ### Using Cache
 
     [php]
@@ -783,6 +824,95 @@ If you're not sure about what query is issued by the finder, you can always chec
 
 **Tip**: When developing with the finder, you may prefer to have an array or string representation of the results rather than an array of objects. The finder objects provides three methods (`toArray()`, `toString()` and `toHtml()`) that internally execute a `find()` and return something that you can output in your response.
 
+Wrap_Up
+-------
+
+Here is the list of methods you can call on a finder:
+
+    // Factories
+
+    static from($from, $connection = null)
+    static fromArray($array, $class, $pkName)
+    static fromClass($class, $connection = null)
+    static fromCollection($collection, $class = '', $pkName = '')
+
+    // Finder Filters (return a finder)
+
+    distinct()
+    limit($limit)
+    offset($offset)
+    where($name, $value)
+    where($name, $comparison, $value, $namedCondition = null)
+    orWhere($name, $value)
+    orWhere($name, $comparison, $value, $namedCondition = null)
+    combine($conditions, $operator = 'and', $namedCondition = null)
+    whereCustom($condition, $values = array(), $namedCondition = null)
+    orWhereCustom($condition, $values = array())
+    filterBy($name, $value)
+    filter($filters, $isNameUnderscore = false, $allowedNames = null)
+    relatedTo($object)
+    orderBy($columnName, $order = null)
+    groupBy($columnName)
+    groupByClass($class)
+    guessOrder($direction = 'desc')
+    join($class, $type = 'inner')
+    join($startColumn, $endColumn, $type)
+    join($class, $startColumn, $endColumn, $type) // Propel only
+
+    // Hydrating (return a finder)
+
+    with($classes)
+    withI18n($culture = null)
+    withColumn($column, $alias = null, $type = null)
+
+    // Finder output (retun a finder)
+
+    select($columnArray, $keyType = self::ASSOCIATIVE) // Propel only
+
+    // Finder executers (return model objects)
+
+    count($distinct = false)
+    find($limit = null)
+    findOne()
+    findLast($column = null)
+    findFirst($column = null)
+    findBy($columnName, $value, $limit = null)
+    findOneBy($columnName, $value)
+    findPk($pk)
+    delete($forceIndividualDeletes = false)
+    paginate($page = 1, $maxPerPage = 10)
+    set($values, $forceIndividualSaves = false)
+
+    // Finder utilities (return a finder)
+
+    keepQuery($keep = true)
+    getLatestQuery()
+    getUniqueIdentifier()
+    useCache($cacheInstance, $lifetime = 0)
+
+    // Conditions (return a finder)
+
+    _if($cond)
+    _elseif($cond)
+    _else()
+    _endif()
+
+    // Properties accessors (return a value)
+
+    getClass()
+    setClass($class, $alias = '')
+    getConnection()
+    setConnection($connection)
+    getQueryObject()
+    setQueryObject($query)
+
+    // Finder Outputters (return a result)
+
+    toArray($limit = null)
+    toString($limit = null)
+    __toString()
+    toHtml($limit = null)
+    
 TODO / Ideas
 ------------
  
@@ -799,8 +929,9 @@ TODO / Ideas
 Changelog
 ---------
 
-### 2009-04-01 | Trunk
+### 2009-04-06 | Trunk
 
+* francois: Added `sfModelFinder::filterBy()` and `sfModelFinder::filter()` methods
 * francois: Added `DbFinderRoute::getObjectPager()` method
 * francois: Added a `DbFinderRoute` class to implement object routing without knowing if the underlying object is Propel or Doctrine.
 * francois: Simplified the use of 'is null' and 'is not null' operators

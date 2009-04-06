@@ -10,10 +10,10 @@
  */
 
 /**
- * sfDoctrineFinderColumn maps column types from Doctrine to an internal column type rule
+ * sfDoctrineFinderColumn maps Doctrine column types to sfModelFinderColumn types
  * Currently supported ORMs are Doctrine 1.0
  */
-class sfDoctrineFinderColumn extends DbFinderColumn
+class sfDoctrineFinderColumn extends sfModelFinderColumn
 {
   private static $doctrineToDbFinderMap = array(
     'enum'      => self::INTEGER,
@@ -39,12 +39,12 @@ class sfDoctrineFinderColumn extends DbFinderColumn
   
   public static function getColumnType($column)
   {
-    // Doctrine
-    if($type = $column->getType())
+    // compatibility layer for sfDoctrine 1.0 and 1.1
+    $method = method_exists($column, 'getType') ? 'getType' : 'getDoctrineType';
+    if($type = $column->$method())
     {
       $type = array_key_exists($type, self::$doctrineToDbFinderMap) ? self::$doctrineToDbFinderMap[$type] : $type;
     }
-    
     return $type;
   }
 }

@@ -10,10 +10,10 @@
  */
 
 /**
- * sfPropelFinderColumn maps column types from Propel to an internal column type rule
+ * sfPropelFinderColumn maps Propel column types to sfModelFinderColumn types
  * Currently supported ORMs are Propel 1.2, and Propel 1.3
  */
-class sfPropelFinderColumn extends DbFinderColumn
+class sfPropelFinderColumn extends sfModelFinderColumn
 {
   private static $propel12ToDbFinderMap = array(
     1 => self::BOOLEAN,

@@ -1742,6 +1742,40 @@ class sfPropelFinder extends sfModelFinder
     return $this;
   }
   
+  /**
+   * Returns the column type of one of the columns of the current model
+   * 
+   * @param string $name a CamelCase column name (e.g. CategoryId)
+   *
+   * @return string Any of the sfModelFinderColumn constants
+   */
+  public function getColumnType($name)
+  {
+    $column = $this->getColumnObject($name);
+    
+    return sfPropelFinderColumn::getColumnType($column);
+  }
+  
+  /**
+   * Returns a ColumnMap object filled with the information of a column of the current table
+   *
+   * @param string $name a CamelCase column name (e.g. CategoryId)
+   *
+   * @return ColumnMap a column object
+   */
+  public function getColumnObject($name)
+  {
+    $tableMap = call_user_func(array($this->peerClass, 'getTableMap'));
+    foreach ($tableMap->getColumns() as $column)
+    {
+      if ($column->getPhpName() == $name)
+      {
+        return $column;
+      }
+    }
+    throw new Exception(sprintf('Class %s has no %s column', $this->class, $name));
+  }
+  
   protected function getPDOConnection()
   {
     $connection = $this->getConnection();

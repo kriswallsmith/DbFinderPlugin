@@ -839,4 +839,9 @@ class DbFinder extends sfModelFinder
     return $this;
   }
   
+  public function getColumnType($name)
+  {
+    return $this->adapter->getColumnType($name);
+  }
+  
 }
