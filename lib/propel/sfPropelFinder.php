@@ -848,7 +848,6 @@ class sfPropelFinder extends sfModelFinder
     
     // Add requested columns which are not withColumns
     $columnNames = is_array($this->select) ? $this->select : array($this->select);
-    $colNames = array();
     foreach ($columnNames as $column)
     {
       // check if the column was added by a withColumn, if not add it
@@ -857,6 +856,9 @@ class sfPropelFinder extends sfModelFinder
         $this->withColumn($column);
       }
     }
+    
+    // get the column names as the query uses FECH_NUM to overcome pdo_dblib limitation with PDO::FETCH_ASSOC
+    $columnNames = array_keys($this->getWithColumns());
     
     // build criteria
     $criteria = $this->buildCriteria();
@@ -891,11 +893,11 @@ class sfPropelFinder extends sfModelFinder
     // Parse the resultset
     if($propelVersion == '1.2')
     {
-      $resultSet->setFetchmode(ResultSet::FETCHMODE_ASSOC);
+      $resultSet->setFetchmode(ResultSet::FETCHMODE_NUM);
     }
     else
     {
-      $resultSet->setFetchmode(PDO::FETCH_ASSOC);
+      $resultSet->setFetchmode(PDO::FETCH_NUM);
     }
     $columns = array();
     while ($row = $resultSet->$nextFunction())
@@ -903,32 +905,30 @@ class sfPropelFinder extends sfModelFinder
       if ($propelVersion == '1.2')
       {
         $row = $resultSet->getRow();
+        // get rid of the first column of the main class
+        array_shift($row);
       }
       if (is_array($this->select))
       {
         $finalRow = array();
-        foreach($row as $key => $value)
+        foreach($row as $index => $value)
         {
-          if(array_key_exists($key, $this->withColumns))
+          if($this->keyType == self::ASSOCIATIVE)
           {
-            if($this->keyType == self::ASSOCIATIVE)
-            {
-              $finalRow[$key] = $value;
-            }
-            else
-            {
-              $finalRow[] = $value;
-            }
+            $finalRow[$columnNames[$index]] = $value;
+          }
+          else
+          {
+            $finalRow[] = $value;
           }
         }
       }
       else
       {
-        $finalRow = $row[$this->select];
+        $finalRow = $row[0];
       }
       $columns[] = $finalRow;
     }
-
     if($cache)
     {
       $cache->set($key, $columns);
@@ -1110,7 +1110,7 @@ class sfPropelFinder extends sfModelFinder
     {
       $columnName = $this->getColName($column, null, false, true);
     }
-    $this->withColumns [$alias]= array(
+    $this->withColumns[$alias] = array(
       'column'    => $isCalculationColumn ? $column : $columnName,
       'type'      => $type
     );

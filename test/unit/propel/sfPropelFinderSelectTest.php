@@ -20,13 +20,16 @@ The tests expect a model similar to this one:
       category:
         id:          ~
         name:        varchar(255)
+      
+      foo:
+        reallylongcolumnnameforassoctesting:  varchar(255)
 
 Beware that the tables for these models will be emptied by the tests, so use a test database connection.
 */
 
 include dirname(__FILE__).'/../../bootstrap.php';
 
-$t = new lime_test(78, new lime_output_color());
+$t = new lime_test(79, new lime_output_color());
 
 /****************************/
 /* sfPropelFinder::select() */
@@ -221,6 +224,16 @@ $finder = sfPropelFinder::from('Category')->
 $categories = $finder->find();
 $cat1 = array_shift($categories);
 $t->is_deeply(array_keys($cat1), array('Id', 'Name'), 'select(array) uses the associative mode by default');
+
+$foo1 = new Foo();
+$foo1->setReallylongcolumnnameforassoctesting('long1');
+$foo1->save();
+
+// fix for a bug/limitation in pdo_dblib where it truncates columnnames to a maximum of 31 characters when doing PDO::FETCH_ASSOC
+$finder = sfPropelFinder::from('Foo')->
+  select(array('Foo.Reallylongcolumnnameforassoctesting'));
+$foo = $finder->findOne();
+$t->is_deeply($foo, array('Foo.Reallylongcolumnnameforassoctesting' => 'long1'), 'select() does not mind long column names');
 
 /********************************************************/
 /* sfPropelFinder::select(array, sfModelFinder::SIMPLE) */
