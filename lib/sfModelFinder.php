@@ -399,7 +399,7 @@ abstract class sfModelFinder
   
   protected static function getValueAndComparisonFromArguments($arguments = array())
   {
-    $comparison = Criteria::EQUAL;
+    $comparison = "=";
     switch (count($arguments))
     {
       case 0:
