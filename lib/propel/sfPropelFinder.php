@@ -688,6 +688,7 @@ class sfPropelFinder extends sfModelFinder
       $ret = $cache->getIfSet($key);
       if($ret !== false)
       {
+        $this->enableCustomColumnGetter();
         return $ret;
       }
     }
@@ -711,14 +712,12 @@ class sfPropelFinder extends sfModelFinder
       }
       
       // Hydrate the objects based on the resultset
-      $omClass = call_user_func(array($this->peerClass, 'getOMClass'));
-      $cls = substr('.'.$omClass, strrpos('.'.$omClass, '.') + 1);
       $objects = array();
       $withObjs = array();
       while ($row = $resultSet->$nextFunction($nextParam))
       {
         // First come the columns of the main class
-        $obj = new $cls();
+        $obj = new $this->class();
         if($propelVersion == '1.2')
         {
           $startCol = $obj->hydrate($resultSet, 1);
@@ -814,11 +813,7 @@ class sfPropelFinder extends sfModelFinder
         $objects []= $obj;
       }
       
-      // activate custom column getter if asColumns were added
-      if($this->getWithColumns() && !sfMixer::getCallable('Base'.$cls.':getColumn'))
-      {
-        sfMixer::register('Base'.$cls, array($this, 'getColumn'));
-      }
+      $this->enableCustomColumnGetter();
     }
     else
     {
@@ -1663,6 +1658,15 @@ class sfPropelFinder extends sfModelFinder
   protected function hasRelation($alias)
   {
     return $this->getRelations()->hasRelation($alias);
+  }
+  
+  protected function enableCustomColumnGetter()
+  {
+    // activate custom column getter if asColumns were added
+    if($this->getWithColumns() && !sfMixer::getCallable('Base'.$this->class.':getColumn'))
+    {
+      sfMixer::register('Base'.$this->class, array($this, 'getColumn'));
+    }
   }
   
   /**
