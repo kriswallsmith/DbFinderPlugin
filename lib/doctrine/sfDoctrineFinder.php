@@ -269,18 +269,10 @@ class sfDoctrineFinder extends sfModelFinder
     {
       $realClass = $class;
     }
-    if(class_exists($realClass))
+    if(is_subclass_of($realClass, 'Doctrine_Record'))
     {
-      $tmp = new $realClass;
-      if($tmp instanceof Doctrine_Record)
-      {
-        $me = __CLASS__;
-        $finder = new $me($class, $connection);
-      }
-      else
-      {
-        throw new Exception('sfDoctrineFinder::fromClass() only accepts a Doctrine model classname');
-      }
+      $me = __CLASS__;
+      $finder = new $me($class, $connection);
     }
     else
     {

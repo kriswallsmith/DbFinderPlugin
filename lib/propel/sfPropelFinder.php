@@ -139,22 +139,14 @@ class sfPropelFinder extends sfModelFinder
   public static function fromClass($class, $connection = null)
   {
     list($realClass, $alias) = self::getClassAndAlias($class);
-    if(class_exists($realClass))
+    if(is_subclass_of($realClass, 'BaseObject'))
     {
-      $tmp = new $realClass;
-      if($tmp instanceof BaseObject)
-      {
-        $me = __CLASS__;
-        $finder = new $me($class, $connection);
-      }
-      else
-      {
-        throw new Exception('sfPropelFinder::fromClass() only accepts a Propel model classname');
-      }
+      $me = __CLASS__;
+      $finder = new $me($class, $connection);
     }
     else
     {
-       throw new Exception('sfPropelFinder::fromClass() only accepts a Propel model classname');
+      throw new Exception('sfPropelFinder::fromClass() only accepts a Propel model classname');
     }
     
     return $finder;
