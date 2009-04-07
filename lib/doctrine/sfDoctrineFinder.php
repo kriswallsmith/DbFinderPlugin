@@ -1449,9 +1449,17 @@ class sfDoctrineFinder extends sfModelFinder
     {
       throw new Exception(sprintf('Class %s has no %s column', $this->class, $name));
     }
-    // compatibility layer for sfDoctrine 1.0 and 1.1
-    $class = class_exists('sfDoctrineAdminColumn') ? 'sfDoctrineAdminColumn' : 'sfDoctrineColumn';
-    return new $class($uName, $this->object->getTable()->getColumnDefinition($uName));
+    
+    if (class_exists('sfDoctrineAdminColumn'))
+    {
+      // Doctrine 1.0
+      return new sfDoctrineAdminColumn($uName, $this->object->getTable()->getColumnDefinition($uName));
+    }
+    else
+    {
+      // Doctrine 1.1
+      return new sfDoctrineColumn($uName, $this->object->getTable());
+    }
   }
   
   protected function hasRelation($class)

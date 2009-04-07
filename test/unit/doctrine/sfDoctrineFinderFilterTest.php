@@ -78,7 +78,8 @@ catch (Exception $e)
 $t->ok(!$throwException, 'getColumnObject() does not throw an exception when its argument is the CamelCase name of a column of the main finder object');
 
 $column = $finder->getColumnObject('Title');
-$t->isa_ok($column, 'sfDoctrineAdminColumn', 'getColumnObject() returns a Doctrine column object when the column is found');
+$doctrineColumnClass = class_exists('sfDoctrineAdminColumn') ? 'sfDoctrineAdminColumn' : 'sfDoctrineColumn';
+$t->isa_ok($column, $doctrineColumnClass, 'getColumnObject() returns a Doctrine column object when the column is found');
 
 /*************************************/
 /* sfDoctrineFinder::getColumnType() */

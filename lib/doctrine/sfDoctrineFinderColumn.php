@@ -43,6 +43,7 @@ class sfDoctrineFinderColumn extends sfModelFinderColumn
     $method = method_exists($column, 'getType') ? 'getType' : 'getDoctrineType';
     if($type = $column->$method())
     {
+      $type = strtolower($type);
       $type = array_key_exists($type, self::$doctrineToDbFinderMap) ? self::$doctrineToDbFinderMap[$type] : $type;
     }
     return $type;
