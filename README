@@ -929,8 +929,9 @@ TODO / Ideas
 Changelog
 ---------
 
-### 2009-04-07 | Trunk
+### 2009-04-09 | Trunk
 
+* francois: Added support for aliases in `sfDoctrineFinder::join()` 
 * francois: Fixed `sfPropelFinder::useCache()` on queries using `withColumn()`
 * francois: Fixed a reference to `Criteria` outside the Propel adapter
 * francois: Fixed problem in `sfPropelFinder::select()` and long column names in pdo_dblib (based on a patch by Benjamin Runnels)

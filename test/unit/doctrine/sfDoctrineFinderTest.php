@@ -49,7 +49,7 @@ include dirname(__FILE__).'/../../bootstrap.php';
 // cleanup database
 Doctrine_Query::create()->delete()->from('DArticle')->execute();
 
-$t = new lime_test(147, new lime_output_color());
+$t = new lime_test(148, new lime_output_color());
 
 $t->diag('find()');
 
@@ -1016,6 +1016,16 @@ catch( Exception $e )
 {
   $t->pass('set() throws an exception when called on a finder with join()');
 }
+
+$t->diag('Table alias');
+
+Doctrine_Query::create()->delete()->from('DArticle')->execute();
+$article1 = new DArticle();
+$article1->setTitle('abc');
+$article1->save();
+$article = sfDoctrineFinder::from('DArticle a')->where('a.Title', 'abc')->findOne();
+$t->is($article->getId(), $article1->getId(), 'from() accepts a table alias');
+
 
 $t->diag('Debugging functions');
 

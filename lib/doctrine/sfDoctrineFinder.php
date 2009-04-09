@@ -97,7 +97,7 @@ class sfDoctrineFinder extends sfModelFinder
     $this->addMissingJoins();
     
     // Add columns
-    $select = array($this->getAlias($this->class).'.*');
+    $select = array(($this->alias ? $this->alias : $this->class).'.*');
     // Add with classes columns
     foreach ($this->getWithClasses() as $class)
     {
@@ -184,7 +184,7 @@ class sfDoctrineFinder extends sfModelFinder
   protected function addAlias($class, $alias = '')
   {
     if(!$alias) list($class, $alias) = $this->getClassAndAliasForDoctrine($class);
-    $this->aliases[$class] = $alias;
+    $this->aliases[$alias] = $class;
   }
   
   /**
@@ -192,9 +192,9 @@ class sfDoctrineFinder extends sfModelFinder
    */
   protected function getAlias($class)
   {
-    if(array_key_exists($class, $this->aliases))
+    if(in_array($class, $this->aliases))
     {
-      return $this->aliases[$class];
+      return array_search($class, $this->aliases);
     }
     
     return $class;
@@ -202,12 +202,12 @@ class sfDoctrineFinder extends sfModelFinder
   
   protected function isAlias($alias)
   {
-    return in_array($alias, array_values($this->aliases));
+    return array_key_exists($alias, $this->aliases);
   }
   
   protected function getClassFromAlias($alias)
   {
-    return array_search($alias, $this->aliases);
+    return $this->aliases[$alias];
   }
   
   // Finder initializers
@@ -1321,25 +1321,50 @@ class sfDoctrineFinder extends sfModelFinder
       case 1:
       case 2:
         // $articleFinder->join('Comment')
+        // $articleFinder->join('Comment co')
         // $articleFinder->join('Category', 'RIGHT JOIN')
+        // $articleFinder->join('Category ca', 'RIGHT JOIN')
         list($relatedClass, $alias, $isTrueAlias) = $this->getClassAndAliasForDoctrine($args[0]);
         $relation = $this->findRelation($relatedClass);
         $operator = isset($args[1]) ? trim(str_replace('join', '', strtolower($args[1]))) : 'inner';
+        $startClass = $this->getAlias($relation->offsetGet('localTable')->getClassnameToReturn());
         break;
       case 3:
         // $articleFinder->join('Article.CategoryId', 'Category.Id', 'RIGHT JOIN')
         // This is mostly for compatibility with Propel
-        $relation = $this->findRelationFromColumns($args[0], $args[1]);
+        list($relation, $direct) = $this->findRelationFromColumns($args[0], $args[1]);
         $operator = trim(str_replace('join', '', strtolower($args[2])));
         $relatedClass = $relation->getTable()->getClassnameToReturn();
+        if($direct)
+        {
+          $startClass = substr($args[0], 0, strpos($args[0], '.'));
+        }
+        else
+        {
+          $startClass = substr($args[1], 0, strpos($args[1], '.'));
+        }
         $alias = '';
         break;
+      case 4:
+        // $articleFinder->join('Category cat', 'Article.CategoryId', 'cat.Id', 'RIGHT JOIN')
+        // This is mostly for compatibility with Propel
+        list($relatedClass, $alias) = $this->getClassAndAlias($args[0]);
+        $col1 = str_replace($alias.'.', $relatedClass.'.', $args[1]);
+        $col2 = str_replace($alias.'.', $relatedClass.'.', $args[2]);
+        list($relation, $direct) = $this->findRelationFromColumns($col1, $col2);
+        $operator = trim(str_replace('join', '', strtolower($args[3])));
+        if($direct)
+        {
+          $startClass = substr($args[1], 0, strpos($args[1], '.'));
+        }
+        else
+        {
+          $startClass = substr($args[2], 0, strpos($args[2], '.'));
+        }
     }
     $method = $operator . 'Join';
-    $startClass = $this->getAlias($relation->offsetGet('localTable')->getClassnameToReturn());
     $relationClass = $relation->getTable()->getClassnameToReturn();
     $this->query->$method($startClass.'.'.$relation->getAlias().' '.$alias);
-    
     if($relationClass == $relatedClass)
     {
       $this->addAlias($relationClass, $alias);
@@ -1517,7 +1542,7 @@ class sfDoctrineFinder extends sfModelFinder
           $this->relatedTables[]= Doctrine::getTable($rightClass);
           $this->relations[$rightClass] = $relation;
           
-          return $relation;
+          return array($relation, true);
         }
         if ($relation->getClass() == $leftClass && $relation->getForeign() == $leftColumn && 
             $relation->offsetGet('localTable')->getClassnameToReturn() == $rightClass && $relation->getLocal() == $rightColumn)
@@ -1525,7 +1550,7 @@ class sfDoctrineFinder extends sfModelFinder
           $this->relatedTables[]= Doctrine::getTable($leftClass);
           $this->relations[$leftClass] = $relation;
           
-          return $relation;
+          return array($relation, false);
         }
 
       }
@@ -1546,7 +1571,7 @@ class sfDoctrineFinder extends sfModelFinder
     {
       // no alias, computing one
       $alias = strtolower(substr($class, 0, 1));
-      while(in_array($alias, $this->aliases))
+      while(array_key_exists($alias, $this->aliases))
       {
         $alias .= '1';
       }

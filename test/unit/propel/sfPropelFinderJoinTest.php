@@ -607,7 +607,7 @@ $t->is($finder->getLatestQuery(), propel_sql('SELECT COUNT([P13*][P12human.ID]) 
 /* sfPropelFinder::join() with multiple self-referenced foreign keys */
 /*********************************************************************/
 
-$t->diag('sfPropelFinder::join() with self-referenced foreign keys');
+$t->diag('sfPropelFinder::join() with multiple self-referenced foreign keys');
 
 HumanPeer::doDeleteAll();
 $human1 = new Human();
