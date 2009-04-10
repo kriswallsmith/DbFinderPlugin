@@ -47,3 +47,16 @@ function propel_sql($sql)
     return preg_replace($regs, array('', '$1'), $sql);
   }
 }
+
+function doctrine_sql($sql)
+{
+  $regs = array('/\[D011(.+?)\]/', '/\[D10(.+?)\]/');
+  if(Doctrine::VERSION == '0.11.0')
+  {
+    return preg_replace($regs, array('$1', ''), $sql);
+  }
+  else
+  {
+    return preg_replace($regs, array('', '$1'), $sql);
+  }
+}

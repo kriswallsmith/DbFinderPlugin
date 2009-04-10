@@ -40,7 +40,7 @@ Beware that the tables for these models will be emptied by the tests, so use a t
 
 include dirname(__FILE__).'/../../bootstrap.php';
 
-$t = new lime_test(20, new lime_output_color());
+$t = new lime_test(21, new lime_output_color());
 
 $t->diag('getUniqueIdentifier()');
 
@@ -78,7 +78,7 @@ $t->is($id1, $id2, 'unique identifier does not take uncombined conditions into a
 
 if (Doctrine::VERSION == '0.11.0')
 {
-  $t->skip('Query cache does not work with Doctrine 0.11', 12);
+  $t->skip('Query cache does not work with Doctrine 0.11', 13);
   die();
 }
 
@@ -120,6 +120,17 @@ $SQL3 = $finder->getLatestQuery();
 // See http://trac.doctrine-project.org/ticket/1561
 //$t->is($SQL3, $SQL2, 'Cached count finder queries do not trigger SQL queries');
 $t->skip('Cached count finder queries do not trigger SQL queries');
+
+// select()
+
+$finder = DbFinder::from('DArticle')->useCache($cache, 10);
+$finder->where('Title', 'foo')->select('Title')->find();
+$finder->where('Title', 'bar')->find();
+$SQL1 = $finder->getLatestQuery();
+$finder = DbFinder::from('DArticle')->useCache($cache, 10);
+$finder->where('Title', 'foo')->select('Title')->find();
+$SQL2 = $finder->getLatestQuery();
+$t->is($SQL1, $SQL2, 'Cached select() queries do not trigger SQL queries');
 
 $t->diag('Cache lifetime');
 

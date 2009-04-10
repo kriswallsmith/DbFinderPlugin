@@ -733,7 +733,7 @@ You can create several custom finders for a given model, in order to separate th
     // Title is a string, so filterBy() translates into a like comparison
     $articleFinder->where('Title', 'like', '%foo%');
 
-    $articleFinder->filterBy('CreatedAt', array('yesterday', 'today'));
+    $articleFinder->filterBy('CreatedAt', array('from' => 'yesterday', 'to' => 'today'));
     // CreatedAt is a timestamp, so filterBy() translates into a between comparison
     $articleFinder->where('CreatedAt', '<=', 'today')->where('CreatedAt', '>=', 'yesterday');
 
@@ -745,7 +745,7 @@ You can create several custom finders for a given model, in order to separate th
     $articleFinder->filter(array(
       'NbComments'  => '10',
       'Title'       => 'foo',
-      'CreatedAt'   => array('yesterday', 'today'),
+      'CreatedAt'   => array('from' => 'yesterday', 'to' => 'today'),
       'IsPublished' => '1'
     ));
     // same as
@@ -865,9 +865,9 @@ Here is the list of methods you can call on a finder:
     withI18n($culture = null)
     withColumn($column, $alias = null, $type = null)
 
-    // Finder output (retun a finder)
+    // Finder output (return a finder)
 
-    select($columnArray, $keyType = self::ASSOCIATIVE) // Propel only
+    select($columnArray, $keyType = self::ASSOCIATIVE)
 
     // Finder executers (return model objects)
 
@@ -929,8 +929,9 @@ TODO / Ideas
 Changelog
 ---------
 
-### 2009-04-09 | Trunk
+### 2009-04-10 | Trunk
 
+* francois: Added `sfDoctrineFinder::select()`
 * francois: Added support for aliases in `sfDoctrineFinder::join()` 
 * francois: Fixed `sfPropelFinder::useCache()` on queries using `withColumn()`
 * francois: Fixed a reference to `Criteria` outside the Propel adapter

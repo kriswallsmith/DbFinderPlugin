@@ -31,7 +31,9 @@ class sfDoctrineFinder extends sfModelFinder
     $withColumns   = array(),
     $culture       = null,
     $cacheEngine     = null,
-    $cacheLifetime   = null;
+    $cacheLifetime   = null,
+    $select          = null,
+    $keyType         = null;
   
   public function getClass()
   {
@@ -58,6 +60,8 @@ class sfDoctrineFinder extends sfModelFinder
     $this->query = Doctrine_Query::create($connection)->from($class . ' ' . $alias);
     $this->queryListener = sfDoctrineFinderListener::getInstance();
     $this->aliases = array();
+    $this->select = null;
+    $this->keyType = null;
 
     if($alias)
     {
@@ -97,7 +101,23 @@ class sfDoctrineFinder extends sfModelFinder
     $this->addMissingJoins();
     
     // Add columns
-    $select = array(($this->alias ? $this->alias : $this->class).'.*');
+    if(!is_null($this->select))
+    {
+      $columnNames = is_array($this->select) ? $this->select : array($this->select);
+      $select = array();
+      foreach ($columnNames as $column)
+      {
+        // check if the column was added by a withColumn, if not add it
+        if(!array_key_exists($column, $this->getWithColumns()))
+        {
+          $select []= $this->getColName($column);
+        }
+      }
+    }
+    else
+    {
+      $select = array(($this->alias ? $this->alias : $this->class).'.*');
+    }
     // Add with classes columns
     foreach ($this->getWithClasses() as $class)
     {
@@ -156,7 +176,102 @@ class sfDoctrineFinder extends sfModelFinder
       $this->queryPattern = '';
       $this->queryArgs = array();
     }
+    
     return $this->query;
+  }
+  
+  /**
+   * Doctrine 0.11 adds primary key columns to the SQL query.
+   * E.g. when requesting 'Article.Title' + 'Category.Name', Doctrine actually asks for 'Article.Id' + 'Article+Title' + 'Category.Id' + 'Category.Name'
+   * sfDoctrineFinder needs to know those additional columns
+   * In ordert o remove them from the final result
+   * This method is only used when selct() was called
+   * 
+   * @param array $columns The list of columns requested by the user (e.g array('Article.Title', 'Category.Name'))
+   * 
+   * @return array The indices to be ignored in the result array (e.g. array('0' => true, '2' => true))
+   */
+  protected function getDoctrineAddedColumns($columns)
+  {
+    if(Doctrine::VERSION != '0.11.0') return array();
+    $tmp = array();
+    foreach($columns as $column)
+    {
+      if(!array_key_exists($column, $this->getWithColumns()))
+      {
+        list($class, $colName) = explode('.', $this->getColName($column));
+        $tmp[$class][] = $colName;
+      }
+    }
+    $ignore = array();
+    $index = 0;
+    foreach ($tmp as $class => $columns)
+    {
+      $class = $this->isAlias($class) ? $this->getClassFromAlias($class) : $class;
+      $table = new $class();
+      $mainIdentifier = $table->getTable()->getIdentifier();
+      if(!in_array($mainIdentifier, $columns))
+      {
+        // Doctrine will add the identifier
+        $ignore[$index] = true;
+        $index +=1;
+      }
+      $index+= count($columns);
+    }
+    
+    return $ignore;
+  }
+  
+  /**
+   * Transform a brute result array to a clean one
+   * When using select(), the finder uses PDO::FETCH_NUM and therefore gets a blind array
+   * This array needs to get proper key names (the ones asked in select)
+   * And it needs to be cleaned up of columns added by Doctrine 0.11 (see getDoctrineAddedColumns)
+   * 
+   * @param array $resultArray A list of result, as returned by PDOStatement::fetchAll(PDO::FETCH_NUM)
+   *
+   * @param array The columns requested by the user. Associative by default, the array uses the keys asked in select()
+   */
+  protected function cleanupResultArray($resultArray)
+  {
+    $columnNames = is_array($this->select) ? $this->select : array($this->select);
+    $ignore = $this->getDoctrineAddedColumns($columnNames);
+    $results = array();
+    foreach ($resultArray as $row)
+    {
+      if($ignore)
+      {
+        // get rid of the columns added by Doctrine
+        $row = array_diff_key($row, $ignore);
+        // reindex the columns
+        $row = array_values($row);
+      }
+      foreach ($row as $key => $value)
+      {
+        if (is_array($this->select))
+        {
+          $finalRow = array();
+          foreach($row as $index => $value)
+          {
+            if($this->keyType == self::ASSOCIATIVE)
+            {
+              $finalRow[$columnNames[$index]] = $value;
+            }
+            else
+            {
+              $finalRow[] = $value;
+            }
+          }
+        }
+        else
+        {
+          $finalRow = $row[0];
+        }
+      }
+      $results[] = $finalRow;
+    }
+    
+    return $results;
   }
   
   /**
@@ -392,7 +507,27 @@ class sfDoctrineFinder extends sfModelFinder
   
   public function select($columnArray, $keyType = self::ASSOCIATIVE)
   {
-    throw new Exception('This method is not yet implemented');
+    if(!$columnArray)
+    {
+      throw new Exception('You must ask for at least one column');
+    }
+    if ($columnArray == '*')
+    {
+      $select = array();
+      foreach ($this->getObject()->getTable()->getColumnNames() as $field) 
+      {
+        $select []= $this->class . '.' . self::camelize($field);
+      }
+      $this->select = $select;
+    }
+    else
+    {
+      $this->select = $columnArray;
+    }
+    $this->keyType = $keyType;
+    $this->query->setHydrationMode(Doctrine::HYDRATE_NONE);
+    
+    return $this;
   }
   
   // Finder Executers
@@ -426,6 +561,10 @@ class sfDoctrineFinder extends sfModelFinder
       $this->query->limit($limit);
     }
     $res = $this->buildQuery()->execute();
+    if(!is_null($this->select))
+    {
+      $res = $this->cleanupResultArray($res);
+    }
     $this->cleanup();
     
     return $res;
@@ -439,9 +578,16 @@ class sfDoctrineFinder extends sfModelFinder
    */
   public function findOne()
   {
-    $records = $this->find(1);
+    $this->query->limit(1);
+    $res = $this->buildQuery()->execute();
+    if(!is_null($this->select))
+    {
+      $res = $this->cleanupResultArray($res);
+    }
+    $res = isset($res[0]) ? $res[0] : (is_array($this->select) ? array() : null);
+    $this->cleanup();
     
-    return isset($records[0]) ? $records[0] : null;
+    return $res;
   }
   
   /**
