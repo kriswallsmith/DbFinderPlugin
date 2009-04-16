@@ -1,7 +1,7 @@
 DbFinder Routing
 ================
 
-The DbFinder plugin comes with two routing classes, allowing you to create routes linked to your model. These routes are somewhat similar to sfPropelRoute and sfDoctrineRoute, although they allow for more powerful and customizable routing mechanism.
+The DbFinder plugin comes with three routing classes, allowing you to create routes linked to your model. These routes offer similar features as those provided by sfPropelRoute and sfDoctrineRoute, although they allow for a more powerful and customizable routing mechanism.
 
 DbFinderObjectRoute
 -------------------
@@ -10,18 +10,18 @@ You should use the `DbFinderObjectRoute` when the action needs to get a single m
 
 ### Fetching A Model Object With The Classic Routing
 
-For instance, in a typical blog application, the URL used to display the details of a post often looks like:
+In a typical blog application, the URL used to display the details of a post often looks like:
 
     http://myapp.com/post/how-is-life-on-earth
 
-The usual way to define such a route in symfony uses the standard `sfRoute` syntax:
+The usual way to define such a route in symfony is to use the standard `sfRoute` syntax:
 
     // in routing.yml
     blog_show:
       url:   /post/:stripped_title
       param: { module: blog, action: show }
 
-In order to get a `BlogPost` object in the `blog/show` action, you need to build a query and check each of the parameters:
+In order to get a `BlogPost` object in the `blog/show` action, you need to build a query and check each of the parameters from the request:
 
     // in modules/blog/actions/actions.class.php
     public function executeShow($request)
@@ -33,7 +33,7 @@ In order to get a `BlogPost` object in the `blog/show` action, you need to build
       ...
     }
 
-And in order to generate an URL for a blog object, you have to specify each parameter explicitely:
+And in order to generate an URL for a blog object, you must specify each parameter explicitely:
 
     // in modules/blog/templates/listSuccess.php
     ...
@@ -44,7 +44,7 @@ And in order to generate an URL for a blog object, you have to specify each para
 
 `DbFinderObjectRoute` offers an alternative way to define the routing rule, to get the model object in the action, and to generate the URL in your templates.
 
-In the routing rule definition, you must specify `DbFinderObjectRoute` as the `class` parameter, and you must also pass a `model` option to tell the route which model you want to deal with.
+In the routing rule definition, use `DbFinderObjectRoute` as the `class` parameter ; you must also add a `model` option to tell the route which model you want to deal with.
 
     // in routing.yml
     blog_show:
@@ -62,13 +62,13 @@ Now the action code can be much more lightweight:
       ...
     }
 
-The `DbFinderObjectRoute` object provides a `getObject()` method that returns an instance of the specified `model` based on the parameters of the URL. Thanks to PHP's magic `__call()` method `getBlogPost()` returns the same object as `getObject()`. The route sees a `stripped_title` parameter in the URL and automatically converts it to a DbFinder condition. Behind the scene, the route does the exact same query as the previous aciton code:
+The `DbFinderObjectRoute` object provides a `getObject()` method that returns an instance of the specified `model` based on the parameters of the URL. Thanks to PHP's magic `__call()` method, `getBlogPost()` returns the same object as `getObject()`. The route sees a `stripped_title` parameter in the URL and automatically converts it to a DbFinder condition. Behind the scene, the route does the exact same query as the previous action code:
 
     $object = DbFinder::from('BlogPost')->
       filterBy('StrippedTitle', $request->getParameter('stripped_title'))->
       findOne();
 
-Notice how you don't even need to check for the existence of the object, since the route forwards to a 404 by itself if no matching object can be found.
+Notice how you don't even need to check the existence of the object, since the route forwards to a 404 by itself if no matching object can be found.
  
 Also, the URL generation code just needs the model object, as the route definition specifies which properties to check.
 
@@ -103,21 +103,21 @@ But that obviously fails, as neither `BlogTitle` or `Date` are actual columns of
     {
       protected $class = 'BlogPost';
       
-      public function filterByDate($date)
-      {
-        return $this->
-          whereCustom('date_format(BlogPost.PublishedAt, \'%y%m\') = ?', $year);
-      }
-      
       public function filterByBlogTitle($title)
       {
         return $this->
           join('Blog')->
           where('Blog.Title', $title);
       }
+      
+      public function filterByDate($date)
+      {
+        return $this->
+          whereCustom('date_format(BlogPost.PublishedAt, \'%y%m\') = ?', $year);
+      }
     }
     
-That custom finder is all it takes to make the `getRoute()` work in the action. `DbFinderObjectRoute` will see the custom methods and create the following query upon a `getRoute()` call:
+That custom finder is all it takes to make the `getObject()` work in the action. `DbFinderObjectRoute` will see the custom methods and create the following query upon a `getObject()` call:
 
     $object = DbFinder::from('BlogPost')->
       filterByBlogTitle($request->getParameter('blog_title'))->
@@ -156,7 +156,11 @@ This may look like a lot of code to write in the model just to make a route work
 
 ### Ignoring Some Parameters
 
-All the parameters passed in a URL are not necessary to find an object. For instance, if the `blog/show` page shows all the comments related to a post, it probably needs a `page` parameter to help paginate the comments. But this parameter must not be considered by the route when it fetches the object. That's why the `DbFinderObjectRoute` offers an `filter_variables` option to list the request parameters that need to be considered for the object fetching:
+Some of the parameters passed in a URL are not necessary to find a model object. For instance, if the `blog/show` page shows all the comments related to a post, it probably needs a `page` parameter to help paginate the comments. 
+
+    http://myapp.com/post/how-is-life-on-earth/page/1
+
+But this parameter must not be considered by the route when it fetches the object. That's why the `DbFinderObjectRoute` offers an `filter_variables` option to list the request parameters that need to be considered for the object fetching:
 
     // in routing.yml
     blog_show:
@@ -165,7 +169,7 @@ All the parameters passed in a URL are not necessary to find an object. For inst
       url:     /post/:stripped_title/:page
       param:   { module: blog, action: show }
       
-With such a route; `getObject()` will only consider the `stripped_title` variable and not the `page` one to fetch a `BlogPost` object.
+With such a route, `getObject()` will only consider the `stripped_title` parameter, and ignore the `page` parameter, to fetch a `BlogPost` object.
 
 Note that, with parameters such as `page`, the syntax of a link generation call differs a little bit:
 
@@ -229,7 +233,7 @@ The `blog/list` action needs to get a list of `BlogPost` objects, and often look
 
 ### Fetching A List Of Model Objects With `DbFinderObjectRoutes`
 
-`DbFinderObjectRoutes` facilitates list actions that rely on a model. Using this new route class, you could achieve an equivalent to the previous action code by the following configuration:
+`DbFinderObjectsRoute` facilitates list actions that rely on a model. Define the route as follows to use this class:
 
     // in routing.yml
     blog_index:
@@ -267,18 +271,18 @@ If you need an array of objects rather than a pager, use `getObjects()` instead 
 
 ### Filtering The List
 
-A common practice when displaying lists is to allow additional parameters to "filter" the list. For instance, the blogs list should accept to filter the list by title, by author, and by month. No matter the interface used to control the filters, the URL always ends up like the following:
+A common practice when displaying lists is to allow additional parameters to "filter" the list. For instance, the blogs list should accept to filter the list by title, by author, and by month. No matter which interface is used to control the filters, the URL always ends up like the following:
 
     http://myapp.com/recent_posts/?filters[title]=*breaking*&filters[author]=marvin&filters[date]=0409
 
-Provided you add a `filter_param` option to the list definition, `DbFinderObjectsRoute` will take thes filters into account automatically.
+Provided you add a `filter_param` option to the list definition, `DbFinderObjectsRoute` will take the filters query string into account automatically.
 
     // in routing.yml
     blog_index:
       class:   DbFinderObjectsRoute
       options: { model: BlogPost, finder_methods: [published], default_order: [published_at, desc], filter_param: filters }
-      url:   /recent_posts/:page
-      param: { module: blog, action: list, page: 1 }
+      url:     /recent_posts/:page
+      param:   { module: blog, action: list, page: 1 }
 
 The consequence is that the entire `filters` array will be passed to the `DbFinder::filter()` method. For instance, a call to `getObjects()` with the URL described above will return the result of the following query:
 
@@ -292,9 +296,9 @@ The consequence is that the entire `filters` array will be passed to the `DbFind
       ))->
       find($limit);
 
-`filter()` first checks if a custom `whereXXX()` method exists for each filter, and uses it if found. Otherwise, it passes the key and the value to `filterBy()`. This method adds a condition based on which type of column the filter is applied, and sanitizes the request parameters according to the column type.
+`filter()` first checks if a custom `filterByXXX()` method exists for each filter, and uses it if found. Otherwise, it passes the key and the value to `filterBy()`. This method adds a `where()` condition based on which type of column the filter is applied to, and sanitizes the request parameters according to the column type.
 
-`Title` is a real column, so `filterBy()` will understand it. `Date` already has a custom `filterByXXX()` method, so there will be no problem with it. But `Author` is not a column of `BlogPost`, so you need to write a new `filterByAuthor()` method to allow `filter()` to handle it.
+`Title` is a real column, so `filterBy()` will understand it. `Date` already has a custom `filterByDate()` method, so there will be no problem with it. But `Author` is not a `BlogPost` column, so you need to write a new `filterByAuthor()` method to allow `DbFinder::filter()` to handle it.
 
     // in lib/model/BlogPostFinder.php
     public function filterByAuthor($author)
@@ -314,12 +318,17 @@ Now the route works, and each call to `getObjects()` translates to something lik
       filterByDate('0409')->
       find($limit);
 
-Of course, you can limit the filters supported by the route in the options, thanks to the `allowed_filters` methods:
+Of course, you can limit the filters supported by the route in the options, thanks to the `allowed_filters` methods.
 
     // in routing.yml
     blog_index:
       class:   DbFinderObjectRoutes
-      options: { model: BlogPost, finder_methods: [published], default_order: [published_at, desc], filter_param: filters, allowed_filters: [title, author, date] }
+      options: 
+        model:            BlogPost
+        finder_methods:   [published]
+        default_order:    [published_at, desc]
+        filter_param:     filters
+        allowed_filters:  [title, author, date]
       url:   /recent_posts/:page
       param: { module: blog, action: list, page: 1 }
 
@@ -334,16 +343,21 @@ The list returned by `getObjects()` will be sorted by the blog title, provided t
     // in routing.yml
     blog_index:
       class:   DbFinderObjectsRoute
-      options: { model: BlogPost, finder_methods: [published], default_order: [published_at, desc], order_param: sort, order_keys: [title, author, date] }
-      url:   /recent_posts/:page
-      param: { module: blog, action: list, page: 1 }
+      options:
+        model:          BlogPost
+        finder_methods: [published]
+        default_order:  [published_at, desc]
+        order_param:    sort
+        order_keys:     [title, author, date]
+      url:     /recent_posts/:page
+      param:   { module: blog, action: list, page: 1 }
 
-If the `DbFinderObjectsRoute` does not recognize a column name in the sort key passed in the URL, it will look for a custom `orderByXXX()` method.
+If the `DbFinderObjectsRoute` does not recognize a column name in the sort key passed in the URL, it looks for a custom `orderByXXX()` method.
 
 DbFinderMultipleRoute
 ---------------------
 
-Some URLs contain enough information to fetch objects from various models. For instance, in a multiple blog engine, the following URL allows the action to retrieve a `Blog` and a `BlogPost` object:
+Some URLs contain enough information to fetch objects from various models. For instance, in a multiple blog engine, the following URL allows the action to retrieve a `Blog` and a `BlogPost` objects:
 
     http://myapp.com/blogs/my_blog/post/how-is-life-on-earth
 
@@ -361,7 +375,7 @@ Some URLs contain enough information to fetch objects from various models. For i
       url:     blogs/:blog_title/post/:stripped_title
       param:   { module: blog, action: show }
 
-The `blog/show` action can retrieve either a single instance, or a list, or a pager, of each of the models specified in the options:
+Using the `DbFinderMultipleRoute` object, the `blog/show` action can retrieve either a single instance (`getObject($model)`), or a list (`getObjects($model)`), or a pager (`getObjectPager($model)`), of each of the models specified in the options:
 
     // in modules/blog/actions/actions.class.php
     public function executeShow($request)
@@ -371,7 +385,7 @@ The `blog/show` action can retrieve either a single instance, or a list, or a pa
       ...
     }
 
-Under the hood, the class will make two queries and use only the request parameters required for each model:
+Under the hood, the class makes two queries and uses only the request parameters required for each model:
 
     $blog = DbFinder::from('Blog')->
       filterBy('BlogTitle', $request->getParameter('blog_title'))->
@@ -390,3 +404,5 @@ Thanks to the magic `__call()` method, the action code can be made a little simp
       $post = $this->getRoute()->getPost();
       ...
     }
+
+All the options accepted in `DbFinderObjectRoute` and `DbFinderObjectsRoute` are valid for `DbFinderMultipleRoute`.
