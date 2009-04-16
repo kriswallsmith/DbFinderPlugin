@@ -159,15 +159,21 @@ abstract class sfModelFinder
    *
    * @param      string  $name PHPName of the column bearing the condition
    * @param      string  $value Value to compare to
+   * @param      string  $type to force a case, use any of the sfModelFinder type constants
    *
    * @return     DbFinder the current finder object
    */
-  public function filterBy($name, $value)
+  public function filterBy($name, $value, $type = null)
   {
-    switch($this->getColumnType($name))
+    $type = is_null($type) ? $this->getColumnType($name) : $type;
+    switch($type)
     {
       case sfModelFinderColumn::DATE:
       case sfModelFinderColumn::TIMESTAMP:
+        if(!is_array($value))
+        {
+          $this->where($name, $value);
+        }
         if (isset($value['from']) && $value['from'] !== '')
         {
           if ($type == sfModelFinderColumn::DATE)
@@ -192,10 +198,27 @@ abstract class sfModelFinder
         }
         break;
       case sfModelFinderColumn::STRING:
-        $this->where($name, 'like', '%'.trim((string) $value, '*%').'%');
+        $value = (string) $value;
+        if(preg_match('/[\%\*]/', $value))
+        {
+          $this->where($name, 'like', str_replace('*', '%', trim($value)));
+        }
+        else
+        {
+          $this->where($name, trim($value));
+        }
         break;
       case sfModelFinderColumn::BOOLEAN:
-        $this->where($name, (boolean) $value);
+        if(is_string($value))
+        {
+          $value = in_array(strtolower($value), array('false', 'off', '-', 'no', 'n')) ? false : true;
+        }
+        else
+        {
+          $value = (boolean) $value;
+        }
+        
+        $this->where($name, $value);
         break;
       case sfModelFinderColumn::DECIMAL:
       case sfModelFinderColumn::REAL:
@@ -228,7 +251,7 @@ abstract class sfModelFinder
   /**
    * Finder Fluid Interface for a list of filters on the columns of the model
    * Calls filterBy() on each of the keys of the filter list
-   * Unless the finder defines a custom filterByXXX() for any of the filters
+   * Unless the finder defines a custom whereXXX() for any of the filters
    *
    * Examples:
    *   $articleFinder->filter(array(
@@ -250,7 +273,7 @@ abstract class sfModelFinder
    *         where('IsPublished', true)->
    *         where('CreatedAt', '>=', '2008-03-04')
    *         where('Title', 'like', '%foo%')
-   *         filterByTags('test+bar');
+   *         whereTags('test+bar');
    *
    * @param  array  $filters associative array of the column names and the values
    * @param  boolean $isNameUnderscore Set to true if the keys are in the underscore form instead of CamelCase
@@ -271,10 +294,10 @@ abstract class sfModelFinder
       {
         $name = sfInflector::camelize($name);
       }
-      $customFilterMethod = 'filterBy' . $name;
-      if(method_exists($this, $customFilterMethod))
+      $customMethod = 'filterBy' . $name;
+      if(method_exists($this, $customMethod))
       {
-        call_user_func(array($this, $customFilterMethod), $value);
+        call_user_func(array($this, $customMethod), $value);
       }
       else
       {
@@ -538,6 +561,11 @@ abstract class sfModelFinder
       array_unshift($arguments, substr($name, 7));
       return call_user_func_array(array($this, 'groupBy'), $arguments);
     }
+    if(strpos($name, 'with') === 0)
+    {
+      array_unshift($arguments, substr($name, 4));
+      return call_user_func_array(array($this, 'with'), $arguments);
+    }
     if(strpos($name, 'join') === 0)
     {
       array_unshift($arguments, substr($name, 4));
@@ -550,6 +578,10 @@ abstract class sfModelFinder
       {
         $joinType = $type . ' JOIN';
         array_push($arguments, $joinType);
+        if (strlen($name) > $pos + 4)
+        {
+          array_unshift($arguments, substr($name, $pos + 4));
+        }
         return call_user_func_array(array($this, 'join'), $arguments);
       }
     }

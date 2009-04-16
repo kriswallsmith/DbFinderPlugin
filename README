@@ -729,12 +729,12 @@ You can create several custom finders for a given model, in order to separate th
     // NbComments is an integer, so filterBy() translates into a simple where() and forces the value type to integer
     $articleFinder->where('NbComments', 10);
     
-    $articleFinder->filterBy('Title', 'foo');
-    // Title is a string, so filterBy() translates into a like comparison
+    $articleFinder->filterBy('Title', '*foo*');
+    // Title is a string, and the value has wildcards, so filterBy() translates into a like comparison
     $articleFinder->where('Title', 'like', '%foo%');
 
     $articleFinder->filterBy('CreatedAt', array('from' => 'yesterday', 'to' => 'today'));
-    // CreatedAt is a timestamp, so filterBy() translates into a between comparison
+    // CreatedAt is a timestamp, and the value is an array, so filterBy() translates into a between comparison
     $articleFinder->where('CreatedAt', '<=', 'today')->where('CreatedAt', '>=', 'yesterday');
 
     $articleFinder->filterBy('IsPublished', '1');
@@ -744,10 +744,16 @@ You can create several custom finders for a given model, in order to separate th
     // filter() expects an associative array of key/value pairs
     $articleFinder->filter(array(
       'NbComments'  => '10',
-      'Title'       => 'foo',
+      'Title'       => '*foo*',
       'CreatedAt'   => array('from' => 'yesterday', 'to' => 'today'),
       'IsPublished' => '1'
     ));
+    // same as
+    $articleFinder->
+      filterBy('NbComments', 10)->
+      filterBy('Title', '%foo%')->
+      filterBy('CreatedAt', array('from' => 'yesterday', 'to' => 'today'))->
+      filterBy('IsPublished', 1);
     // same as
     $articleFinder->
       where('NbComments', 10)->
@@ -755,6 +761,16 @@ You can create several custom finders for a given model, in order to separate th
       where('CreatedAt', '<=', 'today')->
       where('CreatedAt', '>=', 'yesterday')->
       where('IsPublished', true);
+
+    // filter() uses filterByXXX() methods whenever they exist
+    $articleFinder->filter(array(
+      'Title'  => 'foo',
+      'Custom' => 'bar'
+    ));
+    // same as
+    $articleFinder->
+      where('Title', 'like', '%foo%')->
+      filterByCustom('bar');
 
     // filter() is therefore quite useful to filter a list based on an unsafe list of conditions,
     // like the query string found in the admin generator list view
@@ -824,8 +840,47 @@ If you're not sure about what query is issued by the finder, you can always chec
 
 **Tip**: When developing with the finder, you may prefer to have an array or string representation of the results rather than an array of objects. The finder objects provides three methods (`toArray()`, `toString()` and `toHtml()`) that internally execute a `find()` and return something that you can output in your response.
 
-Wrap_Up
--------
+Alternative Framework Components
+--------------------------------
+
+DbFinder comes with a few handy classes to use with the symfony framework.
+
+The plugin bundles a generator theme to build an administration module with DbFinder. It offers additional features and a great ease of use. Check the following example, and the attached `README_generator` documentation, for more details.
+
+    generator:
+      class:              DbFinderAdminGenerator
+      param:
+        model_class:      Article
+        theme:            default
+        
+        list:
+          display: [=title, =category, author]
+          with:    [i18n, Category, Author]
+          finder_methods: [withNbComments]
+          fields:
+            author:   { sort_method: sortByUser }
+            category: { link_module: categoryAdmin }
+          batch_actions:
+            _deleteSelected:
+            myAction: { name: My Action, action: foo }
+
+`DbFinderPlugin` also bundles special routing classes to take advantage of the object routing through `DbFinder`. Check the attached `README_routing` documentation, which explains how to enrich your routing rules with powerful routes looking like the following:
+
+    // in routing.yml
+    blog_index:
+      class:   DbFinderObjectRoutes
+      options: { model: BlogPost, finder_methods: [published], default_order: [published_at, desc], filter_param: filters }
+      url:   /recent_posts/:page
+      param: { module: blog, action: list, page: 1 }
+      
+    blog_show:
+      class:   DbFinderObjectRoute
+      options: { model: BlogPost, finder_methods: [published] }
+      url:     /post/:blog_title/:date/:stripped_title
+      param:   { module: blog, action: show }
+
+In A Nutshell
+-------------
 
 Here is the list of methods you can call on a finder:
 
@@ -929,8 +984,9 @@ TODO / Ideas
 Changelog
 ---------
 
-### 2009-04-10 | Trunk
+### 2009-04-16 | Trunk
 
+* francois: Refactored and documented `DbFinderRoute` and children (WIP)
 * francois: Added `sfDoctrineFinder::select()`
 * francois: Added support for aliases in `sfDoctrineFinder::join()` 
 * francois: Fixed `sfPropelFinder::useCache()` on queries using `withColumn()`

@@ -34,7 +34,7 @@ Beware that the tables for these models will be emptied by the tests, so use a t
 
 include dirname(__FILE__).'/../../bootstrap.php';
 
-$t = new lime_test(20, new lime_output_color());
+$t = new lime_test(21, new lime_output_color());
 
 /***************************************/
 /* sfDoctrineFinder::getColumnObject() */
@@ -121,7 +121,12 @@ $t->diag('sfDoctrineFinder::filterBy()');
 $finder = new sfDoctrineFinder('DArticle');
 $finder->filterBy('Title', 'foo')->find();
 
-$t->is($finder->getLatestQuery(), 'SELECT d.id AS d__id, d.title AS d__title, d.category_id AS d__category_id FROM d_article d WHERE d.title LIKE \'%foo%\'', 'filterBy() called on a sfModelFinderColumn::STRING column type adds a WHERE ... LIKE condition');
+$t->is($finder->getLatestQuery(), 'SELECT d.id AS d__id, d.title AS d__title, d.category_id AS d__category_id FROM d_article d WHERE d.title = \'foo\'', 'filterBy() called on a sfModelFinderColumn::STRING column type adds a WHERE ... = condition');
+
+$finder = new sfDoctrineFinder('DArticle');
+$finder->filterBy('Title', '*foo*')->find();
+
+$t->is($finder->getLatestQuery(), 'SELECT d.id AS d__id, d.title AS d__title, d.category_id AS d__category_id FROM d_article d WHERE d.title LIKE \'%foo%\'', 'filterBy() called on a sfModelFinderColumn::STRING column type with wildcards adds a WHERE ... LIKE condition');
 
 $finder = new sfDoctrineFinder('DArticle');
 $finder->filterBy('CategoryId', 1)->find();
@@ -164,7 +169,7 @@ catch (Exception $e)
 $t->ok($throwException, 'filter() throws an exception when its first argument is not an array of conditions');
 
 $finder->filter(array(
-  'Title' => 'foo'
+  'Title' => '*foo*'
 ))->find();
 
 $t->is($finder->getLatestQuery(), 'SELECT d.id AS d__id, d.title AS d__title, d.category_id AS d__category_id FROM d_article d WHERE d.title LIKE \'%foo%\'', 'filter() calls filterBy() on each condition');
@@ -174,7 +179,7 @@ $finder = new sfDoctrineFinder('DArticle');
 $query = 'SELECT d.id AS d__id, d.title AS d__title, d.category_id AS d__category_id FROM d_article d WHERE (d.title LIKE \'%foo%\' AND d.category_id = \'1\')';
 
 $articles = $finder->filter(array(
-  'Title' => 'foo',
+  'Title' => '*foo*',
   'CategoryId' => '1'
 ))->find();
 
@@ -182,7 +187,7 @@ $t->is($finder->getLatestQuery(), $query, 'filter() calls filterBy() on each con
 
 $finder = new sfDoctrineFinder('DArticle');
 $articles = $finder->filter(array(
-  'title' => 'foo',
+  'title' => '*foo*',
   'category_id' => '1'
 ), true)->find();
 
@@ -190,7 +195,7 @@ $t->is($finder->getLatestQuery(), $query, 'filter() converts underscore column n
 
 $finder = new sfDoctrineFinder('DArticle');
 $finder->filter(array(
-  'Title' => 'foo',
+  'Title' => '*foo*',
   'CategoryId' => '1'
 ), false, array('Title'))->find();
 

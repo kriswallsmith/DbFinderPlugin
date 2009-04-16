@@ -10,18 +10,17 @@
  */
 
 /**
- * DbFinderRoute represents a route that is bound to a Model class.
- *
- * A DbFinderRoute route can represent a single Model object or a list of objects.
+ * DbFinderRoute is a parent class for routes bound to a Model class via DbFinder.
  *
  * @package    DbFinder
  * @author     Francois Zaninotto <francois.zaninotto@symfony-project.com>
  * @author     Fabien Potencier <fabien.potencier@symfony-project.com>
  */
-class DbFinderRoute extends sfObjectRoute
+abstract class DbFinderRoute extends sfRequestRoute
 {
   protected
-    $finder = null;
+    $qs      = null,
+    $finders = array();
 
   /**
    * Constructor.
@@ -33,185 +32,209 @@ class DbFinderRoute extends sfObjectRoute
    *
    * @see sfObjectRoute
    */
- public function __construct($pattern, array $defaults = array(), array $requirements = array(), array $options = array())
- {
-   if (!isset($options['model']))
-   {
-     throw new InvalidArgumentException(sprintf('You must pass a "model" option for a %s object (%s).', get_class($this), $pattern));
-   }
-
-   if (!isset($options['type']))
-   {
-     throw new InvalidArgumentException(sprintf('You must pass a "type" option for a %s object (%s).', get_class($this), $pattern));
-   }
-
-   if (!in_array($options['type'], array('object', 'list', 'pager')))
-   {
-     throw new InvalidArgumentException(sprintf('The "type" option can only be "object", "list", or "pager", "%s" given (%s).', $options['type'], $pattern));
-   }
-
-   $this->pattern      = trim($pattern);
-   $this->defaults     = $defaults;
-   $this->requirements = $requirements;
-   $this->options      = $options;
- }
+  public function __construct($pattern, array $defaults = array(), array $requirements = array(), array $options = array())
+  {
+    $this->pattern      = trim($pattern);
+    $this->defaults     = $defaults;
+    $this->requirements = $requirements;
+    $this->options      = $options;
+  }
   
-  public function setListFinder(sfModelFinder $finder)
+  public function getModelOptions($key)
+  {
+    if (!array_key_exists($key, $this->options))
+    {
+      throw new InvalidArgumentException(sprintf('This route has no %s model defined in its options', $key));
+    }
+    
+    return $this->options[$key];
+  }
+  
+  public function setModelOptions($key, $options)
+  {
+    $this->options[$key] = array_merge($options, $this->options[$key]);
+    return $this->options[$key];
+  }
+  
+  public function setFinder($key, sfModelFinder $finder)
   {
     if (!$this->isBound())
     {
       throw new LogicException('The route is not bound.');
     }
 
-    $this->finder = $finder;
-  }
-
-  protected function getObjectForParameters($parameters)
-  {
-    return $this->getFinder($parameters)->findOne();
+    $this->finders[$key] = $finder;
   }
   
-  /**
-   * Gets the list of objects related to the current route and parameters.
-   *
-   * This method is only accessible if the route is bound and of type "list".
-   *
-   * @param integer $limit The number of results to return (defaults to no limit)
-   * 
-   * @return array And array of related objects
-   */
-  public function getObjects($limit = null)
+  public function getFinder($key)
   {
-    if (!$this->isBound())
+    if (!array_key_exists($key, $this->finders))
     {
-      throw new LogicException('The route is not bound.');
-    }
-
-    if ('list' != $this->options['type'])
-    {
-      throw new LogicException(sprintf('The route "%s" is not of type "list".', $this->pattern));
-    }
-
-    if (false !== $this->objects)
-    {
-      return $this->objects;
-    }
-
-    $this->objects = $this->getFinder($this->parameters)->find($limit);
-
-    if (!count($this->objects) && isset($this->options['allow_empty']) && !$this->options['allow_empty'])
-    {
-      throw new sfError404Exception(sprintf('No %s object found for the following parameters "%s").', $this->options['model'], str_replace("\n", '', var_export($this->filterParameters($this->parameters), true))));
-    }
-
-    return $this->objects;
-  }
-  
-  /**
-   * Gets a pager of objects related to the current route and parameters.
-   *
-   * This method is only accessible if the route is bound and of type "pager".
-   *
-   * @param integer $page The current page (1 by default)
-   * @param integer $maxPerPage The maximum number of results per page (10 by default)
-   *
-   * @return array And array of related objects
-   */
-  public function getObjectPager($page = 1, $maxPerPage = 10)
-  {
-    if (!$this->isBound())
-    {
-      throw new LogicException('The route is not bound.');
-    }
-
-    if ('pager' != $this->options['type'])
-    {
-      throw new LogicException(sprintf('The route "%s" is not of type "pager".', $this->pattern));
-    }
-
-    if (false !== $this->pager)
-    {
-      return $this->pager;
-    }
-
-    $this->pager = $this->getFinder($this->parameters)->paginate($page, $maxPerPage);
-
-    if (!$this->pager->getNbResults() && isset($this->options['allow_empty']) && !$this->options['allow_empty'])
-    {
-      throw new sfError404Exception(sprintf('No %s object found for the following parameters "%s").', $this->options['model'], str_replace("\n", '', var_export($this->filterParameters($this->parameters), true))));
-    }
-
-    return $this->pager;
-  }
-  
-  protected function getFinder($parameters)
-  {
-    if (is_null($this->finder))
-    {
-      $finder = DbFinder::from($this->options['model']);
-      foreach ($this->getRealVariables() as $variable)
+      $options = $this->getModelOptions($key);
+      $finder = DbFinder::from($options['model']);
+      if (isset($options['finder_methods']))
       {
-        $camlVariable = sfInflector::camelize($variable);
-        $customWhere = 'where' . $camlVariable;
-        if(method_exists($finder, $customWhere))
+        foreach ($options['finder_methods'] as $finder_methods)
         {
-          $finder->$customWhere($parameters[$variable]);
-        }
-        else
-        {
-          try
-          {
-            $finder->where(sfInflector::camelize($variable), $parameters[$variable]);
-          }
-          catch (Exception $e)
-          {
-            // don't add condition if the variable cannot be mapped to a column
-          }
-          
+          $finder->$finder_methods();
         }
       }
+      $this->finders[$key] = $finder;
+    }
+
+    return $this->finders[$key];
+  }
+  
+  public function applyConditions($key)
+  {
+    $finder = $this->getFinder($key);
+    $options = $this->getModelOptions($key);
+    // Exceptions need to be caught and ignored, so the route must mimick DbFinder::filter() instead of actually using it
+    foreach ($this->getRealVariables($key) as $variable)
+    {
+      $camlVariable = sfInflector::camelize($variable);
+      $customMethod = 'filterBy' . $camlVariable;
+      if(method_exists($finder, $customMethod))
+      {
+        $finder->$customMethod($this->parameters[$variable]);
+      }
+      else
+      {
+        try
+        {
+          $finder->filterBy($camlVariable, $this->parameters[$variable]);
+        }
+        catch (Exception $e)
+        {
+          // don't add condition if the variable cannot be mapped to a column
+        }
+      }
+    }
+    
+    return $this;
+  }
+  
+  public function applyFilters($key)
+  {
+    $finder = $this->getFinder($key);
+    $options = $this->getModelOptions($key);
+    if(array_key_exists('filter_param', $options) && 
+       array_key_exists($options['filter_param'], $this->getQueryString()))
+    {
+      $allowedFilters = array_key_exists('allowed_filters', $options) ? $options['allowed_filters'] : null;
+      $finder->filter($this->getQueryString($options['filter_param']), true, $allowedFilters);
+    }
+    
+    return $this;
+  }
+  
+  public function applyOrder($key)
+  {
+    $finder = $this->getFinder($key);
+    $options = $this->getModelOptions($key);
+    if(array_key_exists('order_param', $options) &&
+       array_key_exists($options['order_param'], $this->getQueryString()) &&
+       array_key_exists('key', $this->getQueryString($options['order_param'])))
+    {
+      $order = $this->getQueryString($options['order_param']);
+      if(array_key_exists('order_keys', $options) &&
+        !in_array($order['key'], $options['order_keys']))
+      {
+        continue;
+      }
+      $orderColumn = $order['key'];
+      $orderDirection = isset($order['direction']) ? $order['direction'] : null;
+    }
+    elseif(array_key_exists('default_order', $options))
+    {
+      $order = $options['default_order'];
+      $orderColumn = is_array($order) ? $order[0] : $order;
+      $orderDirection = (is_array($order) && isset($order[1])) ? $order[1] : null;
+    }
+    if(isset($orderColumn))
+    {
+      if(method_exists($finder, 'orderBy' . $orderColumn))
+      {
+        call_user_func(array($finder, 'orderBy' . $orderColumn), $orderDirection);
+      }
+      else
+      {
+        $finder->orderBy($orderColumn, $orderDirection);
+      }
+    }
+    
+    return $this;
+  }
+  
+  public function getBoundFinder($key)
+  {
+    return $this->
+      applyConditions($key)->
+      applyFilters($key)->
+      applyOrder($key)->
+      getFinder($key);
+  }
+  
+  // Why doesn't sfRoute have info on the query string ?
+  protected function getQueryString($key = null)
+  {
+    if ($this->qs == null)
+    {
+      $uri = explode('?', $this->context['request_uri']);
+      if (isset($uri[1]))
+      {
+        parse_str($uri[1], $this->qs);
+      }
+      else
+      {
+        $this->qs = array();
+      }
+    }
+    if (!is_null($key))
+    {
+      return $this->qs[$key];
     }
     else
     {
-      $finder = $this->finder;
+      return $this->qs;
     }
-    if (isset($this->options['finder_methods']))
-    {
-      foreach ($this->options['finder_methods'] as $finder_methods)
-      {
-        $finder->$finder_methods();
-      }
-    }
-
-    return $finder;
-  }
-
-  protected function doConvertObjectToArray($object)
-  {
-    if (isset($this->options['convert']) || method_exists($object, 'toParams'))
-    {
-      return parent::doConvertObjectToArray($object);
-    }
-
-    $parameters = array();
-    foreach ($this->getRealVariables() as $variable)
-    {
-      try
-      {
-        $method = 'get'.sfInflector::camelize($variable);
-        $parameters[$variable] = call_user_func(array($object, $method));
-      }
-      catch (Exception $e)
-      {
-        // don't add value if the variable cannot be mapped to a column
-      }
-    }
-
-    return $parameters;
   }
   
-  protected function getRealVariables()
+  protected function filterParameters($parameters)
   {
-    return isset($this->options['object_variables']) ? $this->options['object_variables'] : parent::getRealVariables();
+    if (!is_array($parameters))
+    {
+      return $parameters;
+    }
+
+    $params = array();
+    foreach (array_keys($this->variables) as $variable)
+    {
+      $params[$variable] = $parameters[$variable];
+    }
+
+    return $params;
+  }
+
+  protected function getRealVariables($key)
+  {
+    $options = $this->getModelOptions($key);
+    if (array_key_exists('filter_variables', $options))
+    {
+      return $options['filter_variables'];
+    }
+    
+    $variables = array();
+    foreach (array_keys($this->variables) as $variable)
+    {
+      if (0 === strpos($variable, 'sf_') || in_array($variable, array('module', 'action')))
+      {
+        continue;
+      }
+      
+      $variables[] = $variable;
+    }
+    
+    return $variables;
   }
 }
