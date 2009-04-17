@@ -984,7 +984,7 @@ TODO / Ideas
 Changelog
 ---------
 
-### 2009-04-16 | Trunk
+### 2009-04-17 | 1.2.1 Stable
 
 * francois: Refactored and documented `DbFinderRoute` and children (WIP)
 * francois: Added `sfDoctrineFinder::select()`

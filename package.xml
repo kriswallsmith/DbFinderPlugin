@@ -20,8 +20,8 @@
   </lead>
   <date>2009-04-17</date>
   <version>
-    <release>1.2.0</release>
-    <api>1.2.0</api>
+    <release>1.2.1</release>
+    <api>1.2.1</api>
   </version>
   <stability>
     <release>stable</release>
@@ -138,8 +138,8 @@
  <changelog>
    <release>
      <version>
-       <release>1.2.0</release>
-       <api>1.2.0</api>
+       <release>1.2.1</release>
+       <api>1.2.1</api>
      </version>
      <stability>
       <release>stable</release>
@@ -149,7 +149,7 @@
      <date>2009-04-17</date>
      <license>MIT</license>
      <notes>
-       Enhancements:
+       * Enhancements:
          * Scalar queries: `DbFinder::select()` allows a finder to return an array of column values instead of a model object.
          * Join Aliases: `DbFinder::join()` now supports relations aliases, allowing for conditions on self-referenced foreign keys and multiple foreign keys to the same table
          * Test methods: `DbFinder::_if()`, `DbFinder::_endif()`, `DbFinder::_else()`, and `DbFinder::_elseif()` allow to apply finder methods under specific conditions without breaking the "flow" of method calls.
@@ -160,7 +160,7 @@
          * Performance boost in `sfPropelFinder::with()`
          * Simplified the use of 'is null' and 'is not null' as `where()` operators
          * Added the ability to add new adapters (for arrays, web services, BigTable and the likes)
-       Bug Fixes:
+       * Bug Fixes:
          * Fixed `sfPropelFinder::useCache()` on queries using `withColumn()`
          * Fixed a reference to `Criteria` outside the Propel adapter
          * Fixed a bug in `sfDoctrineFinder` when using named conditions with a null value (patch from Maksymus007)
