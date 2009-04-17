@@ -845,7 +845,7 @@ Alternative Framework Components
 
 DbFinder comes with a few handy classes to use with the symfony framework.
 
-The plugin bundles a generator theme to build an administration module with DbFinder. It offers additional features and a great ease of use. Check the following example, and the attached `README_generator` documentation, for more details.
+The plugin bundles a generator theme to build an administration module with DbFinder. It offers additional features and a great ease of use. Check the following example, and the attached `doc/generator.txt` documentation, for more details.
 
     generator:
       class:              DbFinderAdminGenerator
@@ -864,7 +864,7 @@ The plugin bundles a generator theme to build an administration module with DbFi
             _deleteSelected:
             myAction: { name: My Action, action: foo }
 
-`DbFinderPlugin` also bundles special routing classes to take advantage of the object routing through `DbFinder`. Check the attached `README_routing` documentation, which explains how to enrich your routing rules with powerful routes looking like the following:
+`DbFinderPlugin` also bundles special routing classes to take advantage of the object routing through `DbFinder`. Check the attached `doc/routing.txt` documentation, which explains how to enrich your routing rules with powerful routes looking like the following:
 
     // in routing.yml
     blog_index:
@@ -1019,117 +1019,8 @@ Changelog
 * francois: Fixed issue with two left joins, two `with()`, and missing objects in `sfPropelFinder`
 
 ### 2008-11-17 | 1.0.0 Stable
-
-* francois: Fixed generator theme to allow full sf 1.1 compatibility (with `sf_compat_10` on)
-* francois: Using `Peer::getI18nModel()` to retrieve related i18n class when available (i.e., with Propel 1.3)
-* francois: Added the ability to call `useCache(true)` to let DbFinder choose a caching backend. Works for both Propel and Doctrine adapters.
-* francois: Fixed problem with null foreign keys in admin generator theme
-* francois: Added caching for `find()` and `count()` queries
-* francois: Fixed problem with decimal numbers in `withColumn()` expressions
-* francois: Fixed Doctrine adapter to be compatible with Doctrine 1.0
-
-> WARNING: sfDoctrinePlugin has reverted from Doctrine 1.0 to Doctrine 0.11, so the Doctrine adapter for DbFinder is currently broken
-
-* francois: Fixed `DbFinder::withColumn()` on calculated columns with Doctrine adapter (thanks jwage)
-* francois: Added `DbFinder::initialize()` to allow for custom finder extension
-* francois: Fixed `DbFinder::fromCollection()` didn't return a custom finder instance when applicable
-* francois: Fixed PHP 5.3 compatibility problem on `sfModelFinder::__toString()`
-* francois: Fixed custom generator compatibility problem with symfony 1.1
-* francois: Added 'sort_method' option for foreign key fields and custom fields to be sortable, too
-* francois: Added 'batch_actions' option in the 'list' view of the admin generator
-* francois: The 'with' and the 'finder_methods' parameters are now also supported in the 'edit' view of the generator theme.
-* francois: Changed the generator to auto-add a wildcard on string filters
-* francois: Fixed problem with `join()` called multiple times on the same table in `sfPropelFinder`
-* francois: Fixed problem with `delete()` on tables with a bigint primary key
-* francois: Fixed problem with `sfPropelFinder::addJoin()` not being passed to the Criteria object
-
 ### 2008-08-28 | 0.9.0 Beta
-
-* Doctrine adapter is now complete
-* francois: Implemented `sfDoctrineFinder::withI18n()`
-* francois: Reorganized files into adapter folders 
-* francois: Implemented `sfDoctrineFinder::set()`
-* francois: Implemented `sfDoctrineFinder::paginate()` and `sfDoctrineFinderPager`
-* francois: [BC Break] `withColumn()` now accepts normal CamelCase syntax for calculated columns (`count(Comment.Id)` instead of `count(comment.ID)`)
-* francois: Implemented `sfDoctrineFinder::withColumn()`, partially implemented `getColumn()` getter (currently limited by Doctrine capabilities)
-* francois: Implemented `sfDoctrineFinder::groupBy()` and `sfDoctrineFinder::groupByClass()`
-* francois: Implemented `sfDoctrineFinder::with()`
-* francois: Implemented `sfDoctrineFinder::join()`
-* francois: Added `getQueryObject()` to the list of default methods
-* francois: Implemented `sfDoctrineFinder::orderBy()`
-* francois: Moved magic `__call()` to the parent `sfModelFinder` class
-* francois: Implemented `sfDoctrineFinder::relatedTo()` (and fixed a bug in the `sfPropelFinder::relatedTo()` implementation)
-
 ### 2008-08-12 | 0.4.0 Beta
-
-* francois: Renamed the plugin to `DbFinder`
-* francois: Added `finder_methods` parameter in `generator.yml`
-* francois: Implemented `not in` comparison in `sfDoctrineFinder::where()`
-* francois: Implemented `limit()` and `offset()` in both `sfPropelFinder` and  `sfDoctrineFinder`
-* francois: `sfPropelFinder::join()` now defaults to an `INNER JOIN` instead of a `WHERE` statement (will facilitate compatibility with Doctrine)
-* francois: Implemented `sfDoctrineFinder::combine()`
-* francois: Implemented `sfDoctrineFinder::orWhere()`
-* francois: [BC Break] Removed `_and()` (synonym for `where()`) and renamed `_or()` to `orWhere()`
-* mrhyde:   Fixed problem with `sfPropelFinder`, symfony cache, and Propel 1.3
-* francois: Refactored `DbFinder` to allow agnostic finders on model objects to extend it, and to fix problem with lacking PHPDoc on `DbFinder` methods
-* francois: Added abstract `sfModelFinder` class to keep all abstract methods out of `DbFinder`
-* francois: Implemented `sfDoctrineFinder::delete()`
-* francois: Turned README into Markdown syntax, and changed the main name to `DbFinder`
-* francois: `DbFinder::from('Article')` returns an instance of `ArticleFinder` if it exists. That way, extending the finder gets easier.
-* francois: Added more phpdoc to `sfPropelFinder` and `sfDoctrineFinder`
-* mrhyde:   Fixed issue when calling several termination methods on a finder
-* francois: Implemented `sfDoctrineFinder::count()`
-* francois: [BC Break] Replaced `sfPropelFinder::setPeerClass()` by `sfPropelFinder::setClass()` (will break classes extending sfPropelFinder)
-* francois: Refactored connection management, query reinitialization, and simplified executers signature
-* francois: Implemented `sfDoctrineFinder::fromArray()`, and `sfDoctrineFinder::getLatestQuery()`
-* francois: Added `DbFinderAdminGenerator` (WIP)
-* francois: Fixed problem with `join()` and `with()` when called by children of `sfPropelPager`
-* windock:  Fixed problem with `paginate()` when called by children of `sfPropelPager`
-* mrhyde:   Added `sfPropelFinder::groupByClass()` to ease PostgreSQL grouping
-* francois: Fixed problem with table alias and PostgreSQL (based on a patch by mrhyde)
-* mrhyde:   Fixed problem with group by clauses being ripped off by pager
-* francois: Implemented `DbFinder::toArray()`, `DbFinder::__toString()` and `DbFinder::toHtml()`
-* francois: Implemented `sfDoctrineFinder::findBy()`, `findOneBy()`, `findPk()`, and initialized `where()`
-* francois: Added preliminary support for table aliases (`from('Article a')`) in Doctrine and Propel finders
-* francois: Implemented `sfDoctrineFinder::findOne()`, `findFirst()`, `findLast()` and `orderBy()`
-* francois: Initialized `DbFinder` and `sfDoctrineFinder` (WIP)
-
 ### 2008-07-07 | 0.3.0 Beta
-
-* francois: Added `sfPropelFinder::combine()` method to handle complex queries with And and Or
-* francois: Added support for `with()` in `findPk()` (and documented the method)
-* francois: Added the ability to do left, right, and inner joins in a simple way
-* francois: Made `join()` useless if there is an explicit `where()` on the table afterwards
-* francois: Added a `prove.php` test file to launch all tests at once in a test harness
-* francois: Moved utility methods as static methods of a third-party class to take some weight off the main class
-* francois: Preferring `ClassName.ColumnName` over `ClassName.ColumnName` for complete column names
-* francois: Added Propel 1.3 compatibility
-* francois: Added `sfPropelFinder::set()` method (based on a patch by jug)
-* francois: Added `sfPropelFinder::withI18n()` method
-* francois: Added `sfPropelFinderPager` class and `sfPropelFinder::paginate()` method
-* francois: Added `sfPropelFinder::groupBy()` method
-* francois: `sfPropelFinder::from()` now accepts an array of Propel objects
-* francois: Added `sfPropelFinder::findByXXX()` and `sfPropelFinder::findOneByXXX()` methods
-* francois: Added `sfPropelFinder::relatedTo()` method
-* francois: Added `sfPropelFinder::findFirst()` and `sfPropelFinder::findLast()` methods
-* francois: Added `sfPropelFinder::withColumn()` method
-* jug:      Fixed problem in a particular join case
-* francois: Added `sfPropelFinder::with()` method (based on `sfPropelObjectPeerImpersonator::populateObjects()` code by hartym)
-* francois: Added support for magic `andXXX()` and `orXXX()` methods.
-* jug:      Fixed `_and()` and `_or()` so that they give expected results, rather than the buggy results of Propel's `addAnd()` and `addOr()`
-
 ### 2008-03-31 | 0.2.0 Beta
-
-* francois: De-emphasized the use of magic methods in the unit tests and README
-* francois: Added `sfPropelFinder::_and()` and `sfPropelFinder::_or()` methods
-* francois: Added support for Criteria methods (no more limit to what you can do with a finder!)
-* francois: Added `sfPropelFinder::getLatestQuery()` method
-* francois: Added `sfPropelFinder::delete()` method
-* francois: Added `sfPropelFinder::joinXXX()` method
-* francois: Added `sfPropelFinder::join()` method
-* francois: Added complete `whereClassName_ColumnName()` syntax
-* francois: Added `sfPropelFinder::count()` method
- 
 ### 2008-03-27 | 0.1.0 Alpha
-
-* francois: Initial public release.

@@ -18,10 +18,10 @@
     <email>francois.zaninotto@symfony-project.com</email>
     <active>yes</active>
   </lead>
-  <date>2008-12-01</date>
+  <date>2009-04-17</date>
   <version>
-    <release>1.1.0</release>
-    <api>1.1.0</api>
+    <release>1.2.0</release>
+    <api>1.2.0</api>
   </version>
   <stability>
     <release>stable</release>
@@ -32,7 +32,6 @@
   <contents>
     <dir name="/">
       <file name="README" role="data"/>
-      <file name="README_generator" role="data"/>
       <file name="LICENSE" role="data"/>
       <dir name="data">
         <dir name="generator">
@@ -79,11 +78,15 @@
           </dir>
         </dir>
       </dir>
+      <dir name="doc">
+        <file name="generator.txt" role="data"/>
+        <file name="routing.txt" role="data"/>
+      </dir>
       <dir name="lib">
         <file name="DbFinder.php" role="data"/>
-        <file name="DbFinderAdapterUtils.class.php" role="data"/>
+        <file name="DbFinderAdapterUtils.php" role="data"/>
         <file name="sfModelFinder.php" role="data"/>
-        <file name="sfModelFinderColumn.class.php" role="data"/>
+        <file name="sfModelFinderColumn.php" role="data"/>
         <file name="sfModelFinderFake.php" role="data"/>
         <dir name="doctrine">
           <file name="sfDoctrineFinder.php" role="data"/>
@@ -105,7 +108,10 @@
           <file name="sfPropelFinderUtils.php" role="data"/>
         </dir>
         <dir name="routing">
-          <file name="DbFinderRoute.class.php" role="data"/>
+          <file name="DbFinderMultipleRoute.php" role="data"/>
+          <file name="DbFinderObjectRoute.php" role="data"/>
+          <file name="DbFinderObjectsRoute.php" role="data"/>
+          <file name="DbFinderRoute.php" role="data"/>
         </dir>
       </dir>
     </dir>
@@ -130,6 +136,37 @@
   <phprelease>
  </phprelease>
  <changelog>
+   <release>
+     <version>
+       <release>1.2.0</release>
+       <api>1.2.0</api>
+     </version>
+     <stability>
+      <release>stable</release>
+      <api>stable</api>
+     </stability>
+     <license uri="http://www.symfony-project.com/license">MIT license</license>
+     <date>2009-04-17</date>
+     <license>MIT</license>
+     <notes>
+       Enhancements:
+         * Scalar queries: `DbFinder::select()` allows a finder to return an array of column values instead of a model object.
+         * Join Aliases: `DbFinder::join()` now supports relations aliases, allowing for conditions on self-referenced foreign keys and multiple foreign keys to the same table
+         * Test methods: `DbFinder::_if()`, `DbFinder::_endif()`, `DbFinder::_else()`, and `DbFinder::_elseif()` allow to apply finder methods under specific conditions without breaking the "flow" of method calls.
+         * Complex conditions: `DbFinder::whereCustom()` offers the ability to add a condition on a calculation, with automated escaping of the values injected in the query
+         * Filters: `sfModelFinder::filterBy()` and `sfModelFinder::filter()` methods offer a fast and standard way to apply conditions to a finder
+         * Routing: Added three new classes to offer extended Model Routing capabilities
+         * Generator: Added the ability to add helpers in the `generator.yml`, Added the ability to link to another module in the admin generator theme
+         * Performance boost in `sfPropelFinder::with()`
+         * Simplified the use of 'is null' and 'is not null' as `where()` operators
+         * Added the ability to add new adapters (for arrays, web services, BigTable and the likes)
+       Bug Fixes:
+         * Fixed `sfPropelFinder::useCache()` on queries using `withColumn()`
+         * Fixed a reference to `Criteria` outside the Propel adapter
+         * Fixed a bug in `sfDoctrineFinder` when using named conditions with a null value (patch from Maksymus007)
+         * Fixed an issue with filters on boolean fields in admin generator
+     </notes>
+   </release>
    <release>
      <version>
        <release>1.1.0</release>
