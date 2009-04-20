@@ -984,6 +984,10 @@ TODO / Ideas
 Changelog
 ---------
 
+### 2009-04-20 | Trunk
+
+* francois: Fixed a bug in order param case in `DbFinderRoute`
+
 ### 2009-04-17 | 1.2.1 Stable
 
 * francois: Refactored and documented `DbFinderRoute` and children (WIP)

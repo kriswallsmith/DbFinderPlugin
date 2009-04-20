@@ -142,13 +142,13 @@ abstract class DbFinderRoute extends sfRequestRoute
       {
         continue;
       }
-      $orderColumn = $order['key'];
+      $orderColumn = sfInflector::camelize($order['key']);
       $orderDirection = isset($order['direction']) ? $order['direction'] : null;
     }
     elseif(array_key_exists('default_order', $options))
     {
       $order = $options['default_order'];
-      $orderColumn = is_array($order) ? $order[0] : $order;
+      $orderColumn = is_array($order) ? sfInflector::camelize($order[0]) : sfInflector::camelize($order);
       $orderDirection = (is_array($order) && isset($order[1])) ? $order[1] : null;
     }
     if(isset($orderColumn))
