@@ -144,11 +144,11 @@ class DbFinderMultipleRoute extends DbFinderRoute
       {
         return call_user_func_array(array($this, 'getObject'), array($key) + $arguments);
       }
-      elseif($name == ('get' . $this->model . 'Pager'))
+      elseif($name == ('get' . $key . 'Pager'))
       {
         return call_user_func_array(array($this, 'getObjectPager'), array($key) + $arguments);
       }
-      elseif($name == ('get' . $this->model . 's'))
+      elseif($name == ('get' . $key . 's'))
       {
         return call_user_func_array(array($this, 'getObjects'), array($key) + $arguments);
       }

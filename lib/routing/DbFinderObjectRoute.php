@@ -144,6 +144,19 @@ class DbFinderObjectRoute extends DbFinderRoute
     return $parameters;
   }
   
+  public function serialize()
+  {
+    // always serialize compiled routes
+    $this->compile();
+
+    return serialize(array($this->tokens, $this->defaultParameters, $this->defaultOptions, $this->compiled, $this->options, $this->pattern, $this->regex, $this->variables, $this->defaults, $this->requirements, $this->model));
+  }
+
+  public function unserialize($data)
+  {
+    list($this->tokens, $this->defaultParameters, $this->defaultOptions, $this->compiled, $this->options, $this->pattern, $this->regex, $this->variables, $this->defaults, $this->requirements, $this->model) = unserialize($data);
+  }
+  
   public function __call($name, $arguments)
   {
     if($name == 'get' . $this->model)
