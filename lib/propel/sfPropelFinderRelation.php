@@ -166,6 +166,7 @@ class sfPropelFinderRelation
       $method = 'add' . $this->getRealFromClass();
       $columnName = $this->getFromColumnPhpName();
       $preciseMethod = $method . 'RelatedBy' . $columnName;
+      $oneToOneMethod = 'set' . $this->getRealFromClass();
       if(method_exists($objectToRelate, $preciseMethod))
       {
         $this->addToMethod = $preciseMethod;
@@ -176,12 +177,17 @@ class sfPropelFinderRelation
         $this->addToMethod = $method;
         $this->initMethod = 'init' . $this->getRealFromClass() . 's';
       }
+      elseif(method_exists($objectToRelate, $oneToOneMethod))
+      {
+        $this->addToMethod = $oneToOneMethod;
+        $this->initMethod = null;
+      }
       else
       {
         throw new Exception('Unable to find foreign key setter method');
       }
     }
-    if($isNew)
+    if($isNew && $this->initMethod)
     {
       call_user_func(array($objectToRelate, $this->initMethod));
     }
