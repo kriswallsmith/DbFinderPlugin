@@ -18,10 +18,10 @@
     <email>francois.zaninotto@symfony-project.com</email>
     <active>yes</active>
   </lead>
-  <date>2009-04-17</date>
+  <date>2009-04-23</date>
   <version>
-    <release>1.2.1</release>
-    <api>1.2.1</api>
+    <release>1.2.2</release>
+    <api>1.2.2</api>
   </version>
   <stability>
     <release>stable</release>
@@ -136,6 +136,25 @@
   <phprelease>
  </phprelease>
  <changelog>
+   <release>
+     <version>
+       <release>1.2.2</release>
+       <api>1.2.2</api>
+     </version>
+     <stability>
+      <release>stable</release>
+      <api>stable</api>
+     </stability>
+     <license uri="http://www.symfony-project.com/license">MIT license</license>
+     <date>2009-04-23</date>
+     <license>MIT</license>
+     <notes>
+       * francois: Made `sfPropelFinder::with()` work with one-to-one relationships and Propel 1.3 (patch from ivanrey)
+       * francois: Fixed a bug in `DbFinderObjectRoute` and `DbFinderObjectsRoute` caching
+       * francois: Fixed a warning in `DbFinderObjectRoute::generate()`
+       * francois: Fixed a bug in order param case in `DbFinderRoute`
+     </notes>
+   </release>
    <release>
      <version>
        <release>1.2.1</release>
