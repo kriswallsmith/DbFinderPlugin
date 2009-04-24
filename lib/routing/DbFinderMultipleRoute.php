@@ -138,7 +138,7 @@ class DbFinderMultipleRoute extends DbFinderRoute
   
   public function __call($name, $arguments)
   {
-    foreach ($this->options as $key => $value)
+    foreach ($this->options['models'] as $key => $value)
     {
       if($name == 'get' . $key)
       {

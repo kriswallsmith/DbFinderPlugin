@@ -984,6 +984,10 @@ TODO / Ideas
 Changelog
 ---------
 
+### 2009-04-24 | Trunk
+
+* francois: Refactored model class storage in `DbFinderRoute` and descendants
+
 ### 2009-04-23 | 1.2.2 Stable
 
 * francois: Made `sfPropelFinder::with()` work with one-to-one relationships and Propel 1.3 (patch from ivanrey)

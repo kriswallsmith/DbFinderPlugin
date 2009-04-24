@@ -42,18 +42,18 @@ abstract class DbFinderRoute extends sfRequestRoute
   
   public function getModelOptions($key)
   {
-    if (!array_key_exists($key, $this->options))
+    if (!array_key_exists($key, $this->options['models']))
     {
       throw new InvalidArgumentException(sprintf('This route has no %s model defined in its options', $key));
     }
     
-    return $this->options[$key];
+    return $this->options['models'][$key];
   }
   
   public function setModelOptions($key, $options)
   {
-    $this->options[$key] = array_merge($options, $this->options[$key]);
-    return $this->options[$key];
+    $this->options['models'][$key] = array_merge($options, $this->options['models'][$key]);
+    return $this->options['models'][$key];
   }
   
   public function setFinder($key, sfModelFinder $finder)

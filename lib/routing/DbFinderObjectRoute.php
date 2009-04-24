@@ -30,7 +30,7 @@ class DbFinderObjectRoute extends DbFinderRoute
       throw new InvalidArgumentException(sprintf('You must pass a "model" option for a %s object (%s).', get_class($this), $pattern));
     }
     $this->model = $options['model'];
-    $options = array($this->model => $options);
+    $options = array('models' => array($this->model => $options));
     parent::__construct($pattern, $defaults, $requirements, $options);
   }
   
@@ -55,16 +55,16 @@ class DbFinderObjectRoute extends DbFinderRoute
     
     if(!empty($options))
     {
-      $this->setModelOptions($this->model, $options);
+      $this->setModelOptions($this->getModel(), $options);
     }
     
-    $this->object = $this->getBoundFinder($this->model)->findOne();
+    $this->object = $this->getBoundFinder($this->getModel())->findOne();
     
     // throw an exception if allow_empty is false (false by default)
-    $options = $this->getModelOptions($this->model);
+    $options = $this->getModelOptions($this->getModel());
     if (!($this->object) && (!array_key_exists('allow_empty', $options) || !$options['allow_empty']))
     {
-      throw new sfError404Exception(sprintf('Unable to find the %s object with the following parameters "%s").', $this->model, str_replace("\n", '', var_export($this->filterParameters($this->parameters), true))));
+      throw new sfError404Exception(sprintf('Unable to find the %s object with the following parameters "%s").', $this->getModel(), str_replace("\n", '', var_export($this->filterParameters($this->parameters), true))));
     }
 
     return $this->object;
@@ -120,15 +120,15 @@ class DbFinderObjectRoute extends DbFinderRoute
 
   protected function doConvertObjectToArray($object)
   {
-    if (isset($this->options[$this->model]['convert']) || method_exists($object, 'toParams'))
+    if (isset($this->options[$this->getModel()]['convert']) || method_exists($object, 'toParams'))
     {
-      $method = isset($this->options[$this->model]['convert']) ? $this->options[$this->model]['convert'] : 'toParams';
+      $method = isset($this->options[$this->getModel()]['convert']) ? $this->options[$this->getModel()]['convert'] : 'toParams';
 
       return $object->$method();
     }
 
     $parameters = array();
-    foreach ($this->getRealVariables($this->model) as $variable)
+    foreach ($this->getRealVariables($this->getModel()) as $variable)
     {
       try
       {
@@ -144,22 +144,18 @@ class DbFinderObjectRoute extends DbFinderRoute
     return $parameters;
   }
   
-  public function serialize()
+  public function getModel()
   {
-    // always serialize compiled routes
-    $this->compile();
-
-    return serialize(array($this->tokens, $this->defaultParameters, $this->defaultOptions, $this->compiled, $this->options, $this->pattern, $this->regex, $this->variables, $this->defaults, $this->requirements, $this->model));
-  }
-
-  public function unserialize($data)
-  {
-    list($this->tokens, $this->defaultParameters, $this->defaultOptions, $this->compiled, $this->options, $this->pattern, $this->regex, $this->variables, $this->defaults, $this->requirements, $this->model) = unserialize($data);
+    if(is_null($this->model))
+    {
+      $this->model = array_shift(array_keys($this->options['models']));
+    }
+    return $this->model;
   }
   
   public function __call($name, $arguments)
   {
-    if($name == 'get' . $this->model)
+    if($name == 'get' . $this->getModel())
     {
       return call_user_func_array(array($this, 'getObject'), $arguments);
     }

@@ -30,7 +30,7 @@ class DbFinderObjectsRoute extends DbFinderRoute
       throw new InvalidArgumentException(sprintf('You must pass a "model" option for a %s object (%s).', get_class($this), $pattern));
     }
     $this->model = $options['model'];
-    $options = array($this->model => $options);
+    $options = array('models' => array($this->model => $options));
     parent::__construct($pattern, $defaults, $requirements, $options);
   }
   
@@ -58,16 +58,16 @@ class DbFinderObjectsRoute extends DbFinderRoute
     
     if(!empty($options))
     {
-      $this->setModelOptions($this->model, $options);
+      $this->setModelOptions($this->getModel(), $options);
     }
     
-    $this->objects = $this->getBoundFinder($this->model)->find($limit);
+    $this->objects = $this->getBoundFinder($this->getModel())->find($limit);
     
     // throw an exception if allow_empty is false (true by default)
-    $options = $this->getModelOptions($this->model);
+    $options = $this->getModelOptions($this->getModel());
     if (!count($this->objects) && array_key_exists('allow_empty', $options) && !$options['allow_empty'])
     {
-      throw new sfError404Exception(sprintf('No %s object found for the following parameters "%s").', $this->model, str_replace("\n", '', var_export($this->filterParameters($this->parameters), true))));
+      throw new sfError404Exception(sprintf('No %s object found for the following parameters "%s").', $this->getModel(), str_replace("\n", '', var_export($this->filterParameters($this->parameters), true))));
     }
 
     return $this->objects;
@@ -98,41 +98,37 @@ class DbFinderObjectsRoute extends DbFinderRoute
     
     if(!empty($options))
     {
-      $this->setModelOptions($this->model, $options);
+      $this->setModelOptions($this->getModel(), $options);
     }
     
-    $this->pager = $this->getBoundFinder($this->model)->paginate($page, $maxPerPage);
+    $this->pager = $this->getBoundFinder($this->getModel())->paginate($page, $maxPerPage);
     
     // throw an exception if allow_empty is false (true by default)
-    $options = $this->getModelOptions($this->model);
+    $options = $this->getModelOptions($this->getModel());
     if (!$this->pager->getNbResults() && array_key_exists('allow_empty', $options) && !$options['allow_empty'])
     {
-      throw new sfError404Exception(sprintf('No %s object found for the following parameters "%s").', $this->model, str_replace("\n", '', var_export($this->filterParameters($this->parameters), true))));
+      throw new sfError404Exception(sprintf('No %s object found for the following parameters "%s").', $this->getModel(), str_replace("\n", '', var_export($this->filterParameters($this->parameters), true))));
     }
     
     return $this->pager;
   }
   
-  public function serialize()
+  public function getModel()
   {
-    // always serialize compiled routes
-    $this->compile();
-
-    return serialize(array($this->tokens, $this->defaultParameters, $this->defaultOptions, $this->compiled, $this->options, $this->pattern, $this->regex, $this->variables, $this->defaults, $this->requirements, $this->model));
-  }
-
-  public function unserialize($data)
-  {
-    list($this->tokens, $this->defaultParameters, $this->defaultOptions, $this->compiled, $this->options, $this->pattern, $this->regex, $this->variables, $this->defaults, $this->requirements, $this->model) = unserialize($data);
+    if(is_null($this->model))
+    {
+      $this->model = array_shift(array_keys($this->options['models']));
+    }
+    return $this->model;
   }
   
   public function __call($name, $arguments)
   {
-    if($name == ('get' . $this->model . 'Pager'))
+    if($name == ('get' . $this->getModel() . 'Pager'))
     {
       return call_user_func_array(array($this, 'getObjectPager'), $arguments);
     }
-    elseif($name == ('get' . $this->model . 's'))
+    elseif($name == ('get' . $this->getModel() . 's'))
     {
       return call_user_func_array(array($this, 'getObjects'), $arguments);
     }
