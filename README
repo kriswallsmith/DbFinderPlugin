@@ -495,7 +495,7 @@ Warning: The `withColumn()` feature requires symfony's Behavior system. It will 
       $pager->getfirstIndice(),
       $pager->getLastIndice(),
       $pager->getNbResults());
-    foreach($pager->getResuts() as $article)
+    foreach($pager->getResults() as $article)
     {
       echo $article->getTitle();
     }
