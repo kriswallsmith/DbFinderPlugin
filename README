@@ -987,6 +987,7 @@ Changelog
 ### 2009-04-24 | Trunk
 
 * francois: Refactored model class storage in `DbFinderRoute` and descendants
+* francois: Reverted fix in `DbFinderObjectRoute::generate()` (produces a warning on sf1.3, not sf 1.2)
 
 ### 2009-04-23 | 1.2.2 Stable
 
