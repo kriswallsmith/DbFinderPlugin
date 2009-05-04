@@ -45,7 +45,8 @@ Installation
 
 * Install the plugin
   
-        > php symfony plugin-install http://plugins.symfony-project.com/DbFinderPlugin
+        > php symfony plugin-install http://plugins.symfony-project.com/DbFinderPlugin    # for symfony 1.0
+        > php symfony plugin:install DbFinderPlugin  # for symfony 1.2
 
 * Clear the cache
 
@@ -867,17 +868,17 @@ The plugin bundles a generator theme to build an administration module with DbFi
 `DbFinderPlugin` also bundles special routing classes to take advantage of the object routing through `DbFinder`. Check the attached `doc/routing.txt` documentation, which explains how to enrich your routing rules with powerful routes looking like the following:
 
     // in routing.yml
-    blog_index:
-      class:   DbFinderObjectRoutes
-      options: { model: BlogPost, finder_methods: [published], default_order: [published_at, desc], filter_param: filters }
-      url:   /recent_posts/:page
-      param: { module: blog, action: list, page: 1 }
-      
     blog_show:
       class:   DbFinderObjectRoute
       options: { model: BlogPost, finder_methods: [published] }
       url:     /post/:blog_title/:date/:stripped_title
       param:   { module: blog, action: show }
+    
+    blog_index:
+      class:   DbFinderObjectsRoute
+      options: { model: BlogPost, finder_methods: [published], default_order: [published_at, desc], filter_param: filters }
+      url:   /recent_posts/:page
+      param: { module: blog, action: list, page: 1 }
 
 In A Nutshell
 -------------
@@ -974,11 +975,8 @@ TODO / Ideas
 * Allow i18n hydration of related objects (#3897)
 * Allow `between` as a `where()` operator for simplicity
 * Add a method returning a description of the conditions
-* Add support for `withColumn()` in array/text output methods
 * Bypass hydration in array/text output methods
-* Handle relation aliases in with()
 * Implement iterator interface? That way, the query is only executed upon a foreach or an array access... And the finder can be seen as a collection
-* Column finder, which provides an easy interface to Creole (and PDO) for retrieval of columns instead of objects?
 * Allow `related_to()` to look for relations in joined classes if not found previously in main class
 
 Changelog
