@@ -478,7 +478,7 @@ Warning: The `withColumn()` feature requires symfony's Behavior system. It will 
       join('Category')->
       withColumn('Category.CreatedAt', 'CategoryCreatedAt', 'Timestamp')->
       findOne();
-    $categoryName = $article->getColumn('CategoryCreatedAt');
+    $categoryDate = $article->getColumn('CategoryCreatedAt');
 
 ### Counting Objects
 
@@ -522,16 +522,14 @@ Warning: The `withColumn()` feature requires symfony's Behavior system. It will 
     $article2->save();
 
     // set() issues an UPDATE ... SET query based on an associative array column => value
-    DbFinder::from('Article')->
+    $nbUpdatedRows = DbFinder::from('Article')->
       where('Title', 'foo')->
-      set(array('Title' => 'updated title')); // 1
+      set(array('Title' => 'updated title'));
 
     // set() returns the number of modified columns
-    DbFinder::from('Article')->
-      where('Title', 'updated title')->
-      count(); // 1
+    echo $nbUpdatedRows; // 1
 
-    // Beware that set() updates all records found in a signle row
+    // Beware that set() updates all records found in a single row
     // And bypasses any behavior registered on the save() hooks
     // You can force a one-by-one update by setting the second parameter to true
     DbFinder::from('Article')->
@@ -554,6 +552,8 @@ Warning: The `withColumn()` feature requires symfony's Behavior system. It will 
 
     // Also works for objects with composite primary keys
     $articleI18n = DbFinder::from('ArticleI18n')->findPk(array(123, 'fr'));
+    
+**Tip**:  `find()`, `findOne()`, `findPk`, `count()`, `delete()`, `paginate()`, and `set()` are _termination methods_ that reinitialize the finder object and erase all conditions and joins. If you want to reuse a finder object (for instance to call `find()` after `count()`), call the `keepQuery()` method before the first termination method call.
 
 ### Getting Columns Instead Of Objects
 
@@ -622,9 +622,9 @@ Warning: The `withColumn()` feature requires symfony's Behavior system. It will 
         array('Id' => 456, 'Title' => 'bar', 'Content' => 'This is bar')
       )
     
-### Magic Finder Methods
+### Using Magic Finder Methods
 
-The finder recognizes method calls composed of `where`/`join`/`orderBy`, and a class / column name. It then forwards the method call to the related method, adding the class/column name as a first argument.
+The finder recognizes method calls composed of `where`/`join`/`orderBy`, and a class / column name. It then forwards the call to the related method, adding the class/column name as a first argument.
 
     [php]
     DbFinder::from('Article')->whereTitle('foo')->find();
@@ -982,8 +982,9 @@ TODO / Ideas
 Changelog
 ---------
 
-### 2009-04-24 | Trunk
+### 2009-05-06 | Trunk
 
+* francois: Fixed typos in README
 * francois: Refactored model class storage in `DbFinderRoute` and descendants
 * francois: Reverted fix in `DbFinderObjectRoute::generate()` (produces a warning on sf1.3, not sf 1.2)
 
