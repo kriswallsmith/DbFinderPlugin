@@ -148,7 +148,9 @@ abstract class sfModelFinder
   
   /**
    * Finder Fluid Interface for a filter on one of the columns of the model
+   * Translates to one or more where() calls
    * Infers the type of comparison to apply to the value, based on the column type
+   * Empty values are ignored
    * Examples:
    *   $articleFinder->filterBy('IsPublished', 1)
    *    => $articleFinder->where('IsPublished', true)
@@ -172,7 +174,11 @@ abstract class sfModelFinder
       case sfModelFinderColumn::TIMESTAMP:
         if(!is_array($value))
         {
-          $this->where($name, $value);
+          if(!empty($value))
+          {
+            $this->where($name, $value);
+          }
+          break;
         }
         if (isset($value['from']) && $value['from'] !== '')
         {
@@ -198,42 +204,62 @@ abstract class sfModelFinder
         }
         break;
       case sfModelFinderColumn::STRING:
-        $value = (string) $value;
-        if(preg_match('/[\%\*]/', $value))
+        $value = trim((string) $value);
+        // empty() is too strong, so test cases one by one
+        if($value !== '' && !preg_match('/^[\%\*]+$/', $value))
         {
-          $this->where($name, 'like', str_replace('*', '%', trim($value)));
-        }
-        else
-        {
-          $this->where($name, trim($value));
+          // look for wildcards
+          if(preg_match('/[\%\*]/', $value))
+          {
+            $this->where($name, 'like', str_replace('*', '%', $value));
+          }
+          else
+          {
+            $this->where($name, $value);
+          }
         }
         break;
       case sfModelFinderColumn::BOOLEAN:
-        if(is_string($value))
+        // empty() is too strong, so test cases one by one
+        if($value !== '' && $value !== array() && !is_null($value))
         {
-          $value = in_array(strtolower($value), array('false', 'off', '-', 'no', 'n')) ? false : true;
+          if(is_string($value))
+          {
+            $value = in_array(strtolower($value), array('false', 'off', '-', 'no', 'n', '0')) ? false : true;
+          }
+          else
+          {
+            $value = (boolean) $value;
+          }
+          $this->where($name, $value);
         }
-        else
-        {
-          $value = (boolean) $value;
-        }
-        
-        $this->where($name, $value);
         break;
       case sfModelFinderColumn::DECIMAL:
       case sfModelFinderColumn::REAL:
       case sfModelFinderColumn::FLOAT:
       case sfModelFinderColumn::DOUBLE:
       case sfModelFinderColumn::NUMERIC:
-        $this->where($name, (float) $value);
+        // empty() is too strong, so test cases one by one
+        if($value !== '' && $value !== array() && !is_null($value))
+        {
+          $this->where($name, (float) $value);
+        }
+        break;
       case sfModelFinderColumn::INTEGER:
       case sfModelFinderColumn::BIGINT:
       case sfModelFinderColumn::TINYINT:
       case sfModelFinderColumn::SMALLINT:
-        $this->where($name, (integer) $value);
+        // empty() is too strong, so test cases one by one
+        if($value !== '' && $value !== array() && !is_null($value))
+        {
+          $this->where($name, (integer) $value);
+        }
         break;
       default:
-        $this->where($name, $value);
+        if (!empty($value))
+        {
+          $this->where($name, $value);
+        }
     }
     
     return $this;
@@ -251,7 +277,7 @@ abstract class sfModelFinder
   /**
    * Finder Fluid Interface for a list of filters on the columns of the model
    * Calls filterBy() on each of the keys of the filter list
-   * Unless the finder defines a custom whereXXX() for any of the filters
+   * Unless the finder defines a custom filterByXXX() for any of the keys
    *
    * Examples:
    *   $articleFinder->filter(array(

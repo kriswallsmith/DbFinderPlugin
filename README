@@ -982,8 +982,9 @@ TODO / Ideas
 Changelog
 ---------
 
-### 2009-05-06 | Trunk
+### 2009-05-07 | Trunk
 
+* francois: Made `sfModelFinder::filterBy()` ignore calls with empty values
 * francois: Fixed typos in README
 * francois: Refactored model class storage in `DbFinderRoute` and descendants
 * francois: Reverted fix in `DbFinderObjectRoute::generate()` (produces a warning on sf1.3, not sf 1.2)
