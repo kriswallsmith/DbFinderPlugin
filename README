@@ -829,7 +829,7 @@ You can explicitly access the internal query object (`Criteria` or `Doctrine_Que
       addOr(ArticlePeer::TITLE, 'bar%', Criteria::LIKE);
     $article = $finder->findOne();
 
-If you're not sure about what query is issued by the finder, you can always check the SQL code after executing a termination method by calling the `getLatestQuery()` method.
+If you're not sure about what query is issued by the finder, you can always check the SQL code after executing a termination method by calling the `getLatestQuery()` method. This method is only available when the symfony debug mode is enabled.
 
     [php]
     $finder = DbFinder::from('Article')->where('Title', 'foo');
