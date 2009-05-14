@@ -567,36 +567,18 @@ abstract class sfModelFinder
    */
   public function __call($name, $arguments)
   {
-    if(strpos($name, 'where') === 0)
+    // Maybe it's a magic call to one of the methods supporting it, e.g. 'orderByCreatedAt'
+    static $methods = array('where', 'orWhere', 'orderBy', 'groupBy', 'with', 'join', 'findBy', 'findOneBy', 'filterBy');
+    foreach ($methods as $method)
     {
-      array_unshift($arguments, substr($name, 5));
-      return call_user_func_array(array($this, 'where'), $arguments);
+      if(strpos($name, $method) === 0)
+      {
+        array_unshift($arguments, substr($name, strlen($method)));
+        return call_user_func_array(array($this, $method), $arguments);
+      }
     }
-    if(strpos($name, 'orWhere') === 0)
-    {
-      array_unshift($arguments, substr($name, 7));
-      return call_user_func_array(array($this, 'orWhere'), $arguments);
-    }
-    if(strpos($name, 'orderBy') === 0)
-    {
-      array_unshift($arguments, substr($name, 7));
-      return call_user_func_array(array($this, 'orderBy'), $arguments);
-    }
-    if(strpos($name, 'groupBy') === 0)
-    {
-      array_unshift($arguments, substr($name, 7));
-      return call_user_func_array(array($this, 'groupBy'), $arguments);
-    }
-    if(strpos($name, 'with') === 0)
-    {
-      array_unshift($arguments, substr($name, 4));
-      return call_user_func_array(array($this, 'with'), $arguments);
-    }
-    if(strpos($name, 'join') === 0)
-    {
-      array_unshift($arguments, substr($name, 4));
-      return call_user_func_array(array($this, 'join'), $arguments);
-    }
+    
+    // Maybe it's a magic call to a qualified join method, e.g. 'leftJoinArticle'
     if(($pos = strpos($name, 'Join')) > 0)
     {
       $type = strtoupper(substr($name, 0, $pos));
@@ -611,21 +593,14 @@ abstract class sfModelFinder
         return call_user_func_array(array($this, 'join'), $arguments);
       }
     }
-    if(strpos($name, 'findBy') === 0)
-    {
-      array_unshift($arguments, substr($name, 6));
-      return call_user_func_array(array($this, 'findBy'), $arguments);
-    }
-    if(strpos($name, 'findOneBy') === 0)
-    {
-      array_unshift($arguments, substr($name, 9));
-      return call_user_func_array(array($this, 'findOneBy'), $arguments);
-    }
+    
+    // Maybe the embedded query object can answer to the method call
     if(method_exists($this->getQueryObject(), $name))
     {
       call_user_func_array(array($this->getQueryObject(), $name), $arguments);
       return $this;
     }
+    
     throw new Exception(sprintf('Undefined method %s::%s()', __CLASS__, $name));
   }
 }

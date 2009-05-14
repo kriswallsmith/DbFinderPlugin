@@ -982,8 +982,9 @@ TODO / Ideas
 Changelog
 ---------
 
-### 2009-05-07 | Trunk
+### 2009-05-14 | Trunk
 
+* francois: Added magic handling of `filterByXXX()` methods, refactored `sfModelFinder::__call()` (based on a patch from victor)
 * francois: Made `sfModelFinder::filterBy()` ignore calls with empty values
 * francois: Fixed typos in README
 * francois: Refactored model class storage in `DbFinderRoute` and descendants
